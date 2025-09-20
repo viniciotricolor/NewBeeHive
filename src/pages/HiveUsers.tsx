@@ -18,8 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
-import remarkGfm from 'remark-gfm'; // Importar remark-gfm
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Post {
   title: string;
@@ -33,6 +33,7 @@ interface Post {
   json_metadata: string;
   author_display_name?: string;
   author_avatar_url?: string;
+  pending_payout_value: string; // Adicionado para exibir o valor da recompensa pendente
 }
 
 type SortOption = 'created' | 'hot' | 'trending';
@@ -110,6 +111,7 @@ const HiveUsersPage = () => {
           json_metadata: post.json_metadata,
           author_display_name: authorDisplayName,
           author_avatar_url: authorAvatarUrl,
+          pending_payout_value: post.pending_payout_value, // Mapeando o valor da recompensa pendente
         };
       };
 
@@ -246,9 +248,9 @@ const HiveUsersPage = () => {
     });
   };
 
-  const getVoteWeight = (votes: Array<{ percent: number }>) => {
-    return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;
-  };
+  // Removendo a função getVoteWeight, pois não será mais usada para exibir o número de votos.
+  // Para exibir o número de votos, usaremos post.active_votes.length.
+  // Para exibir o valor da recompensa, usaremos post.pending_payout_value.
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
@@ -394,7 +396,10 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length} {/* Exibindo o número de votos */}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-bold text-green-600 dark:text-green-400">{post.pending_payout_value}</span> {/* Exibindo o valor da recompensa */}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
