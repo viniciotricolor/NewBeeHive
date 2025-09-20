@@ -42,18 +42,13 @@ export const callHiveApi = async (method: string, params: any[], id: number = 1)
 };
 
 export const getDiscussionsByCreated = async (params: PostParams) => {
-  // Ensure only defined parameters are sent, even though the object is built carefully in HiveUsers.tsx
-  const cleanedParams: { [key: string]: any } = {
+  const query: { tag: string; limit: number; start_author?: string; start_permlink?: string } = {
     tag: params.tag,
     limit: params.limit,
+    start_author: params.start_author || undefined, // Explicitly undefined if empty
+    start_permlink: params.start_permlink || undefined, // Explicitly undefined if empty
   };
-  if (params.start_author) {
-    cleanedParams.start_author = params.start_author;
-  }
-  if (params.start_permlink) {
-    cleanedParams.start_permlink = params.start_permlink;
-  }
-  return callHiveApi('condenser_api.get_discussions_by_created', [cleanedParams]);
+  return callHiveApi('condenser_api.get_discussions_by_created', [query]);
 };
 
 export const getDiscussionsByHot = async (params: PostParams) => {

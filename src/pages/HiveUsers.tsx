@@ -18,6 +18,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
+import remarkGfm from 'remark-gfm'; // Importar remark-gfm
 
 interface Post {
   title: string;
@@ -142,30 +144,18 @@ const HiveUsersPage = () => {
             return currentAccumulatedPosts;
           }
 
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          sevenDaysAgo.setHours(0, 0, 0, 0);
-
           let postsForThisBatch: Post[] = [];
           let lastValidPostInBatch: any | null = null;
           let shouldContinueFetching = false;
 
           for (const post of postsToProcess) {
-            const postDate = new Date(post.created + 'Z');
-            if (postDate >= sevenDaysAgo) {
-              postsForThisBatch.push(await processRawPost(post));
-              lastValidPostInBatch = post; // Keep track of the last valid post for the next recursive call
-            } else {
-              // If we hit a post older than 7 days, stop processing and don't fetch more
-              shouldContinueFetching = false;
-              break;
-            }
+            postsForThisBatch.push(await processRawPost(post));
+            lastValidPostInBatch = post; // Keep track of the last valid post for the next recursive call
           }
 
           const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
 
           // Continue fetching if we got a full batch (meaning there might be more)
-          // AND the last post processed was still within the 7-day limit.
           if (postsToProcess.length === API_BATCH_SIZE && lastValidPostInBatch) {
             shouldContinueFetching = true;
           } else {
@@ -180,7 +170,7 @@ const HiveUsersPage = () => {
         };
 
         fetchedPosts = await fetchAllCreatedPostsRecursive();
-        setHasMore(false); // For 'created', we fetch all within 7 days, so no more to load via button
+        setHasMore(false); // For 'created', we fetch all, so no more to load via button
       } else {
         // Logic for 'hot' and 'trending' with pagination
         const params: PostParams = {
@@ -262,7 +252,7 @@ const HiveUsersPage = () => {
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
-      case 'created': return 'Mais Recentes (7 dias)';
+      case 'created': return 'Mais Recentes (Todas)';
       case 'hot': return 'Mais Comentadas';
       case 'trending': return 'Mais Votadas';
       default: return 'Ordenar por';
@@ -306,7 +296,7 @@ const HiveUsersPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 dark:border-gray-700">
                 <DropdownMenuItem onClick={() => setSortOption('created')} className="dark:text-gray-50 hover:dark:bg-gray-700">
-                  Mais Recentes (7 dias)
+                  Mais Recentes (Todas)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortOption('hot')} className="dark:text-gray-50 hover:dark:bg-gray-700">
                   Mais Comentadas
@@ -386,7 +376,16 @@ const HiveUsersPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">{post.body}</p>
+                  <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 text-sm mb-3">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                      }}
+                    >
+                      {post.body}
+                    </ReactMarkdown>
+                  </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
                     <div className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" /> {formatDate(post.created)}
