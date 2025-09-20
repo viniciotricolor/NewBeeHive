@@ -148,21 +148,18 @@ const HiveUsersPage = () => {
 
     try {
       let discussionMethod;
-      let tagToUse = '';
+      const tagToUse = 'introduceyourself'; // Always use 'introduceyourself' tag
 
       switch (currentSortOption) {
         case 'hot':
           discussionMethod = getDiscussionsByHot;
-          tagToUse = 'introduceyourself'; // Hot posts for introduceyourself
           break;
         case 'trending':
           discussionMethod = getDiscussionsByTrending;
-          tagToUse = 'introduceyourself'; // Trending posts for introduceyourself
           break;
         case 'created':
         default:
           discussionMethod = getDiscussionsByCreated;
-          tagToUse = ''; // General feed for created posts
           break;
       }
 
@@ -189,13 +186,13 @@ const HiveUsersPage = () => {
       setHasMore(rawPosts.length > postsPerLoad); // Check if there are more posts than requested limit
 
       if (isInitialLoad) {
-        showSuccess("Postagens da Hive carregadas com sucesso!");
+        showSuccess("Postagens de introdução da Hive carregadas com sucesso!");
       }
       setLastUpdated(new Date());
 
     } catch (error: any) {
-      console.error("Erro ao buscar postagens da Hive:", error);
-      showError(`Falha ao carregar postagens da Hive: ${error.message}.`);
+      console.error("Erro ao buscar postagens de introdução da Hive:", error);
+      showError(`Falha ao carregar postagens de introdução da Hive: ${error.message}.`);
       setPosts([]);
       setHasMore(false);
       setLastUpdated(null);
@@ -251,7 +248,7 @@ const HiveUsersPage = () => {
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
-      case 'created': return 'Mais Recentes (Geral)';
+      case 'created': return 'Mais Recentes';
       case 'hot': return 'Mais Comentadas';
       case 'trending': return 'Mais Votadas';
       default: return 'Ordenar por';
@@ -268,10 +265,10 @@ const HiveUsersPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            {userIntroPost ? `Post de Introdução de @${userIntroPost.author}` : (sortOption === 'created' ? 'Explorar Últimas Postagens na Hive Blockchain' : 'Explorar Postagens de Introdução na Hive Blockchain')}
+            {userIntroPost ? `Post de Introdução de @${userIntroPost.author}` : 'Explorar Postagens de Introdução na Hive Blockchain'}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
-            {userIntroPost ? 'Este é o post de introdução encontrado para o usuário.' : (sortOption === 'created' ? 'Descubra as postagens mais recentes de toda a comunidade Hive.' : 'Descubra as últimas postagens de introdução na comunidade Hive.')}
+            {userIntroPost ? 'Este é o post de introdução encontrado para o usuário.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
           </p>
           {lastUpdated && !userIntroPost && (
             <p className="text-sm text-muted-foreground mb-6">
@@ -309,7 +306,7 @@ const HiveUsersPage = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
                     <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
-                      Mais Recentes (Geral)
+                      Mais Recentes
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
                       Mais Comentadas
@@ -418,15 +415,9 @@ const HiveUsersPage = () => {
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
-                    {userIntroPost || sortOption === 'created' ? (
-                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                        {userIntroPost ? '#introduceyourself' : 'Geral'}
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                        #introduceyourself
-                      </Badge>
-                    )}
+                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+                      #introduceyourself
+                    </Badge>
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -464,7 +455,7 @@ const HiveUsersPage = () => {
         {isEmptyState && !usernameSearchTerm.trim() && (
           <div className="text-center py-12 text-muted-foreground">
             <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem encontrada</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem de introdução encontrada</h3>
             <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
