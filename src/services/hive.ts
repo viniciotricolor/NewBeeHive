@@ -1,4 +1,4 @@
-const HIVE_API_NODE = 'https://api.deathwing.me';
+const HIVE_API_NODE = 'https://api.hive.blog'; // Changed API node to a more common one
 
 interface PostParams {
   tag: string;
@@ -41,22 +41,61 @@ export const callHiveApi = async (method: string, params: any[], id: number = 1)
   return data.result;
 };
 
-// A função cleanPostParams foi removida, pois os parâmetros já são construídos corretamente.
-
 export const getDiscussionsByCreated = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_created', [params]);
+  // Ensure only defined parameters are sent, even though the object is built carefully in HiveUsers.tsx
+  const cleanedParams: { [key: string]: any } = {
+    tag: params.tag,
+    limit: params.limit,
+  };
+  if (params.start_author) {
+    cleanedParams.start_author = params.start_author;
+  }
+  if (params.start_permlink) {
+    cleanedParams.start_permlink = params.start_permlink;
+  }
+  return callHiveApi('condenser_api.get_discussions_by_created', [cleanedParams]);
 };
 
 export const getDiscussionsByHot = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_hot', [params]);
+  const cleanedParams: { [key: string]: any } = {
+    tag: params.tag,
+    limit: params.limit,
+  };
+  if (params.start_author) {
+    cleanedParams.start_author = params.start_author;
+  }
+  if (params.start_permlink) {
+    cleanedParams.start_permlink = params.start_permlink;
+  }
+  return callHiveApi('condenser_api.get_discussions_by_hot', [cleanedParams]);
 };
 
 export const getDiscussionsByTrending = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_trending', [params]);
+  const cleanedParams: { [key: string]: any } = {
+    tag: params.tag,
+    limit: params.limit,
+  };
+  if (params.start_author) {
+    cleanedParams.start_author = params.start_author;
+  }
+  if (params.start_permlink) {
+    cleanedParams.start_permlink = params.start_permlink;
+  }
+  return callHiveApi('condenser_api.get_discussions_by_trending', [cleanedParams]);
 };
 
 export const getDiscussionsByBlog = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_blog', [params]);
+  const cleanedParams: { [key: string]: any } = {
+    tag: params.tag,
+    limit: params.limit,
+  };
+  if (params.start_author) {
+    cleanedParams.start_author = params.start_author;
+  }
+  if (params.start_permlink) {
+    cleanedParams.start_permlink = params.start_permlink;
+  }
+  return callHiveApi('condenser_api.get_discussions_by_blog', [cleanedParams]);
 };
 
 export const getAccounts = async (params: AccountParams) => {
