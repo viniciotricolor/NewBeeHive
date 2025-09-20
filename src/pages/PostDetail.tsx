@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User } from "lucide-react";
+import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from "lucide-react"; // Adicionado RefreshCw
 import { showSuccess, showError } from "@/utils/toast";
 import { getContent, getAccounts, getPostComments } from '@/services/hive'; // Importar getPostComments
 import PostCardSkeleton from '@/components/PostCardSkeleton';
