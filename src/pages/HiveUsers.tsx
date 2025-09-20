@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending } from '@/services/hive';
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive'; // Adicionado PostParams
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {

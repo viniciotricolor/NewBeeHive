@@ -164,7 +164,7 @@ const PostDetail = () => {
       const rawComments = await getPostComments({ author, permlink });
 
       // Coletar todos os autores únicos dos comentários
-      const uniqueAuthors = Array.from(new Set(rawComments.map(comment => comment.author)));
+      const uniqueAuthors: string[] = Array.from(new Set(rawComments.map(comment => comment.author))); // Corrigido o tipo
 
       // Buscar informações de conta para todos os autores
       const accountsData = await getAccounts({ names: uniqueAuthors });
