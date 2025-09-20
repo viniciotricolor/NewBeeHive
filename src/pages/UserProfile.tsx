@@ -108,9 +108,9 @@ const UserProfilePage = () => {
         posts: userPosts,
       });
       showSuccess(`Posts de @${username} carregados com sucesso!`);
-    } catch (error) {
+    } catch (error: any) { // Explicitly type error as any to access .message
       console.error(`Erro ao buscar perfil e posts de @${username}:`, error);
-      showError(`Falha ao carregar perfil e posts de @${username}.`);
+      showError(`Falha ao carregar perfil e posts de @${username}: ${error.message}.`);
       setProfile(null);
     } finally {
       setLoading(false);

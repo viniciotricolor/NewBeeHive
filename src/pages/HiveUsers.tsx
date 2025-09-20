@@ -96,9 +96,9 @@ const HiveUsersPage = () => {
 
       setPosts(processedPosts);
       showSuccess("Postagens da Hive carregadas com sucesso!");
-    } catch (error) {
+    } catch (error: any) { // Explicitly type error as any to access .message
       console.error("Erro ao buscar postagens da Hive:", error);
-      showError("Falha ao carregar postagens da Hive. Tente novamente mais tarde.");
+      showError(`Falha ao carregar postagens da Hive: ${error.message}.`);
       setPosts([]); // Clear posts on error
     } finally {
       setLoading(false);
