@@ -16,6 +16,11 @@ interface ContentParams {
   permlink: string;
 }
 
+interface CommentRepliesParams {
+  author: string;
+  permlink: string;
+}
+
 export const callHiveApi = async (method: string, params: any[], id: number = 1) => {
   const response = await fetch(HIVE_API_NODE, {
     method: 'POST',
@@ -99,6 +104,11 @@ export const getAccounts = async (params: AccountParams) => {
 
 export const getContent = async (params: ContentParams) => {
   return callHiveApi('condenser_api.get_content', [params.author, params.permlink]);
+};
+
+export const getPostComments = async (params: CommentRepliesParams) => {
+  // get_content_replies takes parent_author and parent_permlink
+  return callHiveApi('condenser_api.get_content_replies', [params.author, params.permlink]);
 };
 
 // Utility to convert raw reputation to a more readable format

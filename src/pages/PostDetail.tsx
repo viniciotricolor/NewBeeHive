@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { getContent, getAccounts } from '@/services/hive';
+import { getContent, getAccounts, getPostComments } from '@/services/hive'; // Importar getPostComments
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -24,30 +24,81 @@ interface Post {
   json_metadata: string;
   author_display_name?: string;
   author_avatar_url?: string;
-  pending_payout_value: string; // Adicionado para exibir o valor da recompensa pendente
+  pending_payout_value: string;
+}
+
+interface Comment {
+  id: number;
+  author: string;
+  permlink: string;
+  body: string;
+  created: string;
+  replies: number;
+  active_votes: Array<{ percent: number }>;
+  json_metadata: string;
+  author_display_name?: string;
+  author_avatar_url?: string;
+  pending_payout_value: string;
+  depth: number; // Para indicar a profundidade do comentário (resposta de resposta)
 }
 
 const PostDetail = () => {
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loadingPost, setLoadingPost] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
+
+  const processRawComment = async (comment: any): Promise<Comment> => {
+    let authorDisplayName = comment.author;
+    let authorAvatarUrl = `https://images.hive.blog/u/${comment.author}/avatar`;
+
+    try {
+      const metadata = JSON.parse(comment.json_metadata);
+      if (metadata && metadata.profile) {
+        if (metadata.profile.name) {
+          authorDisplayName = metadata.profile.name;
+        }
+        if (metadata.profile.profile_image) {
+          authorAvatarUrl = metadata.profile.profile_image;
+        }
+      }
+    } catch (e) {
+      // Metadados podem estar malformados ou ausentes, fallback já definido
+    }
+
+    return {
+      id: comment.id,
+      author: comment.author,
+      permlink: comment.permlink,
+      body: comment.body,
+      created: comment.created,
+      replies: comment.children,
+      active_votes: comment.active_votes,
+      json_metadata: comment.json_metadata,
+      author_display_name: authorDisplayName,
+      author_avatar_url: authorAvatarUrl,
+      pending_payout_value: comment.pending_payout_value,
+      depth: comment.depth,
+    };
+  };
 
   const fetchPostDetail = useCallback(async () => {
     if (!author || !permlink) {
       showError("Autor ou permlink da postagem não fornecidos.");
-      setLoading(false);
+      setLoadingPost(false);
       return;
     }
 
-    setLoading(true);
+    setLoadingPost(true);
     try {
       const rawPost = await getContent({ author, permlink });
 
-      if (!rawPost || rawPost.id === 0) { // rawPost.id === 0 usually means post not found
+      if (!rawPost || rawPost.id === 0) {
         showError("Postagem não encontrada.");
         setPost(null);
-        setLoading(false);
+        setLoadingPost(false);
         return;
       }
 
@@ -80,7 +131,7 @@ const PostDetail = () => {
         json_metadata: rawPost.json_metadata,
         author_display_name: authorDisplayName,
         author_avatar_url: authorAvatarUrl,
-        pending_payout_value: rawPost.pending_payout_value, // Mapeando o valor da recompensa pendente
+        pending_payout_value: rawPost.pending_payout_value,
       };
 
       setPost(processedPost);
@@ -90,13 +141,34 @@ const PostDetail = () => {
       showError(`Falha ao carregar detalhes da postagem: ${error.message}.`);
       setPost(null);
     } finally {
-      setLoading(false);
+      setLoadingPost(false);
+    }
+  }, [author, permlink]);
+
+  const fetchComments = useCallback(async () => {
+    if (!author || !permlink) {
+      setLoadingComments(false);
+      return;
+    }
+
+    setLoadingComments(true);
+    try {
+      const rawComments = await getPostComments({ author, permlink });
+      const processedComments = await Promise.all(rawComments.map(processRawComment));
+      setComments(processedComments);
+    } catch (error: any) {
+      console.error("Erro ao buscar comentários:", error);
+      showError(`Falha ao carregar comentários: ${error.message}.`);
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
     }
   }, [author, permlink]);
 
   useEffect(() => {
     fetchPostDetail();
-  }, [fetchPostDetail]);
+    fetchComments(); // Buscar comentários junto com os detalhes da postagem
+  }, [fetchPostDetail, fetchComments]);
 
   const formatDate = (dateInput: string | Date) => {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -109,11 +181,7 @@ const PostDetail = () => {
     });
   };
 
-  // Removendo a função getVoteWeight, pois não será mais usada para exibir o número de votos.
-  // Para exibir o número de votos, usaremos post.active_votes.length.
-  // Para exibir o valor da recompensa, usaremos post.pending_payout_value.
-
-  if (loading) {
+  if (loadingPost) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 flex justify-center items-center">
         <PostCardSkeleton />
@@ -194,6 +262,64 @@ const PostDetail = () => {
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Ver na Hive.blog
               </Button>
+            </div>
+
+            {/* Seção de Comentários */}
+            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-6">Comentários ({comments.length})</h2>
+
+              {loadingComments ? (
+                <div className="text-center py-8 dark:text-gray-300">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                  <p>Carregando comentários...</p>
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-8 dark:text-gray-300">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {comments.map((comment) => (
+                    <Card key={comment.id} className="dark:bg-gray-700 dark:border-gray-600 shadow-sm">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={comment.author_avatar_url} alt={comment.author_display_name} />
+                            <AvatarFallback>{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <CardTitle className="text-md dark:text-gray-50">{comment.author_display_name || comment.author}</CardTitle>
+                            <CardDescription className="text-xs text-gray-500 dark:text-gray-400">
+                              <Link to={`/users/${comment.author}`} className="font-medium hover:underline">@{comment.author}</Link> • {formatDate(comment.created)}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 text-sm mb-3">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                            }}
+                          >
+                            {comment.body}
+                          </ReactMarkdown>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center">
+                            <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-bold text-green-600 dark:text-green-400">{comment.pending_payout_value}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
