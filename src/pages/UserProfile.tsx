@@ -275,7 +275,7 @@ const UserProfilePage = () => {
                         a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                       }}
                     >
-                      {post.body.substring(0, 200) + (post.body.length > 200 ? '...' : '')} {/* Truncar para exibição na lista */}
+                      {post.body} {/* Removida a truncagem aqui */}
                     </ReactMarkdown>
                   </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
