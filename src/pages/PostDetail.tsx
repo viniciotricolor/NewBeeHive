@@ -5,9 +5,9 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from "lucide-react"; // Adicionado RefreshCw
+import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { getContent, getAccounts, getPostComments } from '@/services/hive'; // Importar getPostComments
+import { getContent, getAccounts, getPostComments, formatReputation } from '@/services/hive'; // Importar formatReputation
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -39,8 +39,11 @@ interface Comment {
   author_display_name?: string;
   author_avatar_url?: string;
   pending_payout_value: string;
-  depth: number; // Para indicar a profundidade do comentário (resposta de resposta)
+  depth: number;
+  author_reputation?: number; // Adicionado para armazenar a reputação do autor
 }
+
+const REPUTATION_THRESHOLD = 25; // Reputação mínima para exibir um comentário (contas novas começam em 25)
 
 const PostDetail = () => {
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
@@ -50,7 +53,7 @@ const PostDetail = () => {
   const [loadingPost, setLoadingPost] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const processRawComment = async (comment: any): Promise<Comment> => {
+  const processRawComment = async (comment: any, authorReputationMap: Map<string, number>): Promise<Comment> => {
     let authorDisplayName = comment.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${comment.author}/avatar`;
 
@@ -81,6 +84,7 @@ const PostDetail = () => {
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: comment.pending_payout_value,
       depth: comment.depth,
+      author_reputation: authorReputationMap.get(comment.author), // Adiciona a reputação
     };
   };
 
@@ -154,8 +158,27 @@ const PostDetail = () => {
     setLoadingComments(true);
     try {
       const rawComments = await getPostComments({ author, permlink });
-      const processedComments = await Promise.all(rawComments.map(processRawComment));
-      setComments(processedComments);
+
+      // Coletar todos os autores únicos dos comentários
+      const uniqueAuthors = Array.from(new Set(rawComments.map(comment => comment.author)));
+
+      // Buscar informações de conta para todos os autores
+      const accountsData = await getAccounts({ names: uniqueAuthors });
+      const authorReputationMap = new Map<string, number>();
+      accountsData.forEach((account: any) => {
+        authorReputationMap.set(account.name, formatReputation(account.reputation));
+      });
+
+      const processedComments = await Promise.all(
+        rawComments.map(comment => processRawComment(comment, authorReputationMap))
+      );
+
+      // Filtrar comentários com base na reputação do autor
+      const filteredComments = processedComments.filter(
+        comment => (comment.author_reputation ?? 0) >= REPUTATION_THRESHOLD
+      );
+
+      setComments(filteredComments);
     } catch (error: any) {
       console.error("Erro ao buscar comentários:", error);
       showError(`Falha ao carregar comentários: ${error.message}.`);
@@ -292,6 +315,9 @@ const PostDetail = () => {
                             <CardTitle className="text-md dark:text-gray-50">{comment.author_display_name || comment.author}</CardTitle>
                             <CardDescription className="text-xs text-gray-500 dark:text-gray-400">
                               <Link to={`/users/${comment.author}`} className="font-medium hover:underline">@{comment.author}</Link> • {formatDate(comment.created)}
+                              {comment.author_reputation !== undefined && (
+                                <span className="ml-2 text-gray-400 dark:text-gray-500">({comment.author_reputation})</span>
+                              )}
                             </CardDescription>
                           </div>
                         </div>
