@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive'; // Adicionado PostParams
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {
@@ -33,7 +33,7 @@ interface Post {
   json_metadata: string;
   author_display_name?: string;
   author_avatar_url?: string;
-  pending_payout_value: string; // Adicionado para exibir o valor da recompensa pendente
+  pending_payout_value: string;
 }
 
 type SortOption = 'created' | 'hot' | 'trending';
@@ -48,8 +48,8 @@ const HiveUsersPage = () => {
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const postsPerLoad = 12; // Used for display and for 'hot'/'trending' API limit
-  const API_BATCH_SIZE = 100; // Number of posts to fetch per API call for 'created' option
+  const postsPerLoad = 12;
+  const API_BATCH_SIZE = 100;
   const navigate = useNavigate();
 
   const fetchHivePosts = useCallback(async (
@@ -111,7 +111,7 @@ const HiveUsersPage = () => {
           json_metadata: post.json_metadata,
           author_display_name: authorDisplayName,
           author_avatar_url: authorAvatarUrl,
-          pending_payout_value: post.pending_payout_value, // Mapeando o valor da recompensa pendente
+          pending_payout_value: post.pending_payout_value,
         };
       };
 
@@ -125,7 +125,7 @@ const HiveUsersPage = () => {
         ): Promise<Post[]> => {
           const params: PostParams = {
             tag: 'introduceyourself',
-            limit: API_BATCH_SIZE + 1, // Fetch one more to check for next page
+            limit: API_BATCH_SIZE + 1,
           };
 
           if (currentStartAuthor && currentStartPermlink) {
@@ -139,7 +139,6 @@ const HiveUsersPage = () => {
             return currentAccumulatedPosts;
           }
 
-          // If start_author/permlink were provided, the first post is a duplicate of the last one from the previous batch
           const postsToProcess = (currentStartAuthor && currentStartPermlink) ? rawPostsBatch.slice(1) : rawPostsBatch;
 
           if (postsToProcess.length === 0) {
@@ -152,12 +151,11 @@ const HiveUsersPage = () => {
 
           for (const post of postsToProcess) {
             postsForThisBatch.push(await processRawPost(post));
-            lastValidPostInBatch = post; // Keep track of the last valid post for the next recursive call
+            lastValidPostInBatch = post;
           }
 
           const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
 
-          // Continue fetching if we got a full batch (meaning there might be more)
           if (postsToProcess.length === API_BATCH_SIZE && lastValidPostInBatch) {
             shouldContinueFetching = true;
           } else {
@@ -172,12 +170,11 @@ const HiveUsersPage = () => {
         };
 
         fetchedPosts = await fetchAllCreatedPostsRecursive();
-        setHasMore(false); // For 'created', we fetch all, so no more to load via button
+        setHasMore(false);
       } else {
-        // Logic for 'hot' and 'trending' with pagination
         const params: PostParams = {
           tag: 'introduceyourself',
-          limit: postsPerLoad + 1 // Fetch one more to check if there are more pages
+          limit: postsPerLoad + 1
         };
 
         if (startAuthor && startPermlink) {
@@ -187,11 +184,10 @@ const HiveUsersPage = () => {
 
         const rawPosts = await discussionMethod(params);
         
-        // If start_author/permlink were provided, the first post is a duplicate
         const postsToProcess = (startAuthor && startPermlink) ? rawPosts.slice(1) : rawPosts;
 
         fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
-        setHasMore(rawPosts.length > postsPerLoad); // Check if the original rawPosts had more than 'postsPerLoad'
+        setHasMore(rawPosts.length > postsPerLoad);
       }
 
       setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
@@ -225,7 +221,7 @@ const HiveUsersPage = () => {
   );
 
   const handleLoadMore = () => {
-    if (sortOption !== 'created' && posts.length > 0) { // Only allow load more for 'hot' and 'trending'
+    if (sortOption !== 'created' && posts.length > 0) {
       const lastPost = posts[posts.length - 1];
       fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
     }
@@ -248,10 +244,6 @@ const HiveUsersPage = () => {
     });
   };
 
-  // Removendo a função getVoteWeight, pois não será mais usada para exibir o número de votos.
-  // Para exibir o número de votos, usaremos post.active_votes.length.
-  // Para exibir o valor da recompensa, usaremos post.pending_payout_value.
-
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
       case 'created': return 'Mais Recentes (Todas)';
@@ -262,18 +254,18 @@ const HiveUsersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Explorar Postagens de Introdução na Hive Blockchain
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-2">
+          <p className="text-lg text-muted-foreground mb-2">
             Descubra as últimas postagens de introdução na comunidade Hive.
           </p>
           {lastUpdated && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Última atualização: {formatDate(lastUpdated)}
             </p>
           )}
@@ -281,34 +273,34 @@ const HiveUsersPage = () => {
           {/* Search and Controls */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Buscar por título ou autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600"
+                className="pl-10 bg-input border-input text-foreground"
               />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
+                <Button variant="outline" className="flex items-center gap-2 bg-card text-card-foreground border-border">
                   {getSortOptionLabel(sortOption)} <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 dark:border-gray-700">
-                <DropdownMenuItem onClick={() => setSortOption('created')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+              <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
+                <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
                   Mais Recentes (Todas)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('hot')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+                <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
                   Mais Comentadas
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('trending')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+                <DropdownMenuItem onClick={() => setSortOption('trending')} className="hover:bg-accent hover:text-accent-foreground">
                   Mais Votadas
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+            <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingRefresh ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
@@ -321,35 +313,35 @@ const HiveUsersPage = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <User className="h-8 w-8 text-blue-600 mr-3" />
+                <User className="h-8 w-8 text-primary mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{posts.length}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Postagens carregadas</p>
+                  <p className="text-2xl font-bold text-foreground">{posts.length}</p>
+                  <p className="text-sm text-muted-foreground">Postagens carregadas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Search className="h-8 w-8 text-green-600 mr-3" />
+                <Search className="h-8 w-8 text-green-600 mr-3" /> {/* Mantendo verde para distinção */}
                 <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{filteredPosts.length}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Postagens filtradas</p>
+                  <p className="text-2xl font-bold text-foreground">{filteredPosts.length}</p>
+                  <p className="text-sm text-muted-foreground">Postagens filtradas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
+                <ExternalLink className="h-8 w-8 text-purple-600 mr-3" /> {/* Mantendo roxo para distinção */}
                 <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{new Set(posts.map(p => p.author)).size}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Autores únicos</p>
+                  <p className="text-2xl font-bold text-foreground">{new Set(posts.map(p => p.author)).size}</p>
+                  <p className="text-sm text-muted-foreground">Autores únicos</p>
                 </div>
               </div>
             </CardContent>
@@ -362,7 +354,7 @@ const HiveUsersPage = () => {
             Array.from({ length: postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
           ) : (
             filteredPosts.map((post) => (
-              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 dark:bg-gray-800 dark:border-gray-700">
+              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-10 w-10">
@@ -370,15 +362,15 @@ const HiveUsersPage = () => {
                       <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <CardTitle className="text-lg dark:text-gray-50">{post.title}</CardTitle>
-                      <CardDescription className="text-sm text-blue-600 dark:text-blue-400">
+                      <CardTitle className="text-lg text-card-foreground">{post.title}</CardTitle>
+                      <CardDescription className="text-sm text-primary">
                         Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 text-sm mb-3">
+                  <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -388,7 +380,7 @@ const HiveUsersPage = () => {
                       {post.body}
                     </ReactMarkdown>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                     <div className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" /> {formatDate(post.created)}
                     </div>
@@ -396,20 +388,20 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length} {/* Exibindo o número de votos */}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length}
                     </div>
                     <div className="flex items-center">
-                      <span className="font-bold text-green-600 dark:text-green-400">${post.pending_payout_value}</span> {/* Exibindo o valor da recompensa */}
+                      <span className="font-bold text-green-600">${post.pending_payout_value}</span> {/* Mantendo verde para o valor */}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                       #introduceyourself
                     </Badge>
                   </div>
                   <div className="flex gap-2">
                     <Button 
-                      className="flex-1" 
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
                       onClick={() => navigate(`/users/${post.author}`)}
                     >
                       <User className="h-4 w-4 mr-2" />
@@ -417,7 +409,7 @@ const HiveUsersPage = () => {
                     </Button>
                     <Button 
                       variant="outline"
-                      className="flex-1" 
+                      className="flex-1 bg-card text-card-foreground border-border" 
                       onClick={() => navigate(`/post/${post.author}/${post.permlink}`)}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -433,7 +425,7 @@ const HiveUsersPage = () => {
         {/* Load More Button */}
         {hasMore && filteredPosts.length > 0 && (
           <div className="flex justify-center mt-8">
-            <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+            <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
             </Button>
           </div>
@@ -441,10 +433,10 @@ const HiveUsersPage = () => {
 
         {/* Empty State */}
         {filteredPosts.length === 0 && !loading && (
-          <div className="text-center py-12 dark:text-gray-300">
-            <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-2">Nenhuma postagem encontrada</h3>
-            <p className="text-gray-600 dark:text-gray-300">Tente ajustar sua busca ou atualizar a lista.</p>
+          <div className="text-center py-12 text-muted-foreground">
+            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem encontrada</h3>
+            <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
       </div>

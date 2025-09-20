@@ -40,11 +40,9 @@ interface Comment {
   author_avatar_url?: string;
   pending_payout_value: string;
   depth: number;
-  author_reputation?: number; // Reputação formatada
-  raw_author_reputation?: number; // Reputação bruta
+  author_reputation?: number;
+  raw_author_reputation?: number;
 }
-
-// REPUTATION_THRESHOLD removido, pois o filtro será baseado na reputação bruta negativa.
 
 const PostDetail = () => {
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
@@ -87,8 +85,8 @@ const PostDetail = () => {
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: comment.pending_payout_value,
       depth: comment.depth,
-      author_reputation: reputationInfo?.formatted, // Reputação formatada
-      raw_author_reputation: reputationInfo?.raw, // Reputação bruta
+      author_reputation: reputationInfo?.formatted,
+      raw_author_reputation: reputationInfo?.raw,
     };
   };
 
@@ -163,16 +161,14 @@ const PostDetail = () => {
     try {
       const rawComments = await getPostComments({ author, permlink });
 
-      // Coletar todos os autores únicos dos comentários
-      const uniqueAuthors: string[] = Array.from(new Set(rawComments.map(comment => comment.author))); // Corrigido o tipo
+      const uniqueAuthors: string[] = Array.from(new Set(rawComments.map(comment => comment.author)));
 
-      // Buscar informações de conta para todos os autores
       const accountsData = await getAccounts({ names: uniqueAuthors });
       const authorReputationMap = new Map<string, { formatted: number, raw: number }>();
       accountsData.forEach((account: any) => {
         authorReputationMap.set(account.name, {
           formatted: formatReputation(account.reputation),
-          raw: account.reputation, // Armazenar a reputação bruta
+          raw: account.reputation,
         });
       });
 
@@ -180,9 +176,8 @@ const PostDetail = () => {
         rawComments.map(comment => processRawComment(comment, authorReputationMap))
       );
 
-      // Filtrar comentários onde a reputação bruta do autor é negativa
       const filteredComments = processedComments.filter(
-        comment => (comment.raw_author_reputation ?? 0) >= 0 // Manter se a reputação bruta for 0 ou positiva
+        comment => (comment.raw_author_reputation ?? 0) >= 0
       );
 
       setComments(filteredComments);
@@ -197,7 +192,7 @@ const PostDetail = () => {
 
   useEffect(() => {
     fetchPostDetail();
-    fetchComments(); // Buscar comentários junto com os detalhes da postagem
+    fetchComments();
   }, [fetchPostDetail, fetchComments]);
 
   const formatDate = (dateInput: string | Date) => {
@@ -213,7 +208,7 @@ const PostDetail = () => {
 
   if (loadingPost) {
     return (
-      <div className="min-h-screen bg-background p-4 flex justify-center items-center"> {/* Alterado para bg-background */}
+      <div className="min-h-screen bg-background p-4 flex justify-center items-center">
         <PostCardSkeleton />
       </div>
     );
@@ -221,22 +216,22 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background p-4 text-center dark:text-gray-300"> {/* Alterado para bg-background */}
-        <h2 className="text-2xl font-bold mb-4">Postagem não encontrada</h2>
+      <div className="min-h-screen bg-background p-4 text-center text-muted-foreground">
+        <h2 className="text-2xl font-bold mb-4 text-foreground">Postagem não encontrada</h2>
         <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
-        <Button onClick={() => navigate('/')}>Voltar para a Home</Button>
+        <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">Voltar para a Home</Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        <Button onClick={() => navigate(-1)} className="mb-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+        <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground">
           Voltar
         </Button>
 
-        <Card className="dark:bg-gray-800 dark:border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-4">
             <div className="flex items-center space-x-4 mb-4">
               <Avatar className="h-12 w-12">
@@ -244,13 +239,13 @@ const PostDetail = () => {
                 <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-2xl dark:text-gray-50">{post.title}</CardTitle>
-                <CardDescription className="text-md text-blue-600 dark:text-blue-400">
+                <CardTitle className="text-2xl text-card-foreground">{post.title}</CardTitle>
+                <CardDescription className="text-md text-primary">
                   Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
                 </CardDescription>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
               </div>
@@ -261,12 +256,12 @@ const PostDetail = () => {
                 <ThumbsUp className="h-4 w-4 mr-1" /> {post.active_votes.length} Curtidas
               </div>
               <div className="flex items-center">
-                <span className="font-bold text-green-600 dark:text-green-400">${post.pending_payout_value}</span> {/* Adicionado '$' */}
+                <span className="font-bold text-green-600">${post.pending_payout_value}</span>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mt-4">
+            <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
@@ -278,7 +273,7 @@ const PostDetail = () => {
             </div>
             <div className="mt-6 flex gap-2">
               <Button 
-                className="flex-1" 
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
                 onClick={() => navigate(`/users/${post.author}`)}
               >
                 <User className="h-4 w-4 mr-2" />
@@ -286,7 +281,7 @@ const PostDetail = () => {
               </Button>
               <Button 
                 variant="outline"
-                className="flex-1" 
+                className="flex-1 bg-card text-card-foreground border-border" 
                 onClick={() => window.open(post.url, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -295,23 +290,23 @@ const PostDetail = () => {
             </div>
 
             {/* Seção de Comentários */}
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-6">Comentários ({comments.length})</h2>
+            <div className="mt-8 pt-8 border-t border-border">
+              <h2 className="text-2xl font-bold text-foreground mb-6">Comentários ({comments.length})</h2>
 
               {loadingComments ? (
-                <div className="text-center py-8 dark:text-gray-300">
-                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
                   <p>Carregando comentários...</p>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="text-center py-8 dark:text-gray-300">
-                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-lg">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {comments.map((comment) => (
-                    <Card key={comment.id} className="dark:bg-gray-700 dark:border-gray-600 shadow-sm">
+                    <Card key={comment.id} className="bg-card border-border shadow-sm">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
@@ -319,18 +314,18 @@ const PostDetail = () => {
                             <AvatarFallback>{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <CardTitle className="text-md dark:text-gray-50">{comment.author_display_name || comment.author}</CardTitle>
-                            <CardDescription className="text-xs text-gray-500 dark:text-gray-400">
-                              <Link to={`/users/${comment.author}`} className="font-medium hover:underline">@{comment.author}</Link> • {formatDate(comment.created)}
+                            <CardTitle className="text-md text-card-foreground">{comment.author_display_name || comment.author}</CardTitle>
+                            <CardDescription className="text-xs text-muted-foreground">
+                              <Link to={`/users/${comment.author}`} className="font-medium hover:underline text-primary">@{comment.author}</Link> • {formatDate(comment.created)}
                               {comment.author_reputation !== undefined && (
-                                <span className="ml-2 text-gray-400 dark:text-gray-500">({comment.author_reputation})</span>
+                                <span className="ml-2 text-muted-foreground">({comment.author_reputation})</span>
                               )}
                             </CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 text-sm mb-3">
+                        <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
@@ -340,12 +335,12 @@ const PostDetail = () => {
                             {comment.body}
                           </ReactMarkdown>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center">
                             <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
                           </div>
                           <div className="flex items-center">
-                            <span className="font-bold text-green-600 dark:text-green-400">${comment.pending_payout_value}</span> {/* Adicionado '$' */}
+                            <span className="font-bold text-green-600">${comment.pending_payout_value}</span>
                           </div>
                         </div>
                       </CardContent>
