@@ -41,30 +41,22 @@ export const callHiveApi = async (method: string, params: any[], id: number = 1)
   return data.result;
 };
 
-// Helper function to clean up params by removing undefined values
-const cleanPostParams = (params: PostParams) => {
-  const cleaned: { [key: string]: any } = {};
-  if (params.tag !== undefined) cleaned.tag = params.tag;
-  if (params.limit !== undefined) cleaned.limit = params.limit;
-  if (params.start_author !== undefined) cleaned.start_author = params.start_author;
-  if (params.start_permlink !== undefined) cleaned.start_permlink = params.start_permlink;
-  return cleaned;
-};
+// A função cleanPostParams foi removida, pois os parâmetros já são construídos corretamente.
 
 export const getDiscussionsByCreated = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_created', [cleanPostParams(params)]);
+  return callHiveApi('condenser_api.get_discussions_by_created', [params]);
 };
 
 export const getDiscussionsByHot = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_hot', [cleanPostParams(params)]);
+  return callHiveApi('condenser_api.get_discussions_by_hot', [params]);
 };
 
 export const getDiscussionsByTrending = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_trending', [cleanPostParams(params)]);
+  return callHiveApi('condenser_api.get_discussions_by_trending', [params]);
 };
 
 export const getDiscussionsByBlog = async (params: PostParams) => {
-  return callHiveApi('condenser_api.get_discussions_by_blog', [cleanPostParams(params)]);
+  return callHiveApi('condenser_api.get_discussions_by_blog', [params]);
 };
 
 export const getAccounts = async (params: AccountParams) => {
