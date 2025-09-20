@@ -6,29 +6,33 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Search, User, ExternalLink, RefreshCw } from "lucide-react";
+import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
-interface HiveUser {
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  post_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
-  follower_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
-  last_post_date: string;
-  post_url: string; // This will now be the introduction post URL
+interface Post {
+  title: string;
+  body: string;
+  created: string;
+  permlink: string;
+  author: string;
+  url: string;
+  replies: number;
+  active_votes: Array<{ percent: number }>;
+  json_metadata: string;
+  author_display_name?: string; // Optional, will try to fetch from metadata
+  author_avatar_url?: string; // Optional, will try to fetch from metadata
 }
 
 const HiveUsersPage = () => {
-  const [users, setUsers] = useState<HiveUser[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 12;
-  const navigate = useNavigate(); // Initialize useNavigate
+  const postsPerPage = 12;
+  const navigate = useNavigate();
 
-  const fetchHiveUsers = useCallback(async () => {
+  const fetchHivePosts = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('https://api.hive.blog', {
@@ -57,76 +61,83 @@ const HiveUsersPage = () => {
       }
 
       const rawPosts = data.result;
-      const uniqueUsers = new Map<string, HiveUser>();
+      const processedPosts: Post[] = await Promise.all(rawPosts.map(async (post: any) => {
+        let authorDisplayName = post.author;
+        let authorAvatarUrl = "https://via.placeholder.com/150"; // Default placeholder
 
-      rawPosts.forEach((post: any) => {
-        if (!uniqueUsers.has(post.author)) {
-          let displayName = post.author;
-          let avatarUrl = "https://via.placeholder.com/150"; // Default placeholder
-
-          try {
-            const metadata = JSON.parse(post.json_metadata);
-            if (metadata && metadata.profile) {
-              if (metadata.profile.name) {
-                displayName = metadata.profile.name;
-              }
-              if (metadata.profile.profile_image) {
-                avatarUrl = metadata.profile.profile_image;
-              }
+        try {
+          const metadata = JSON.parse(post.json_metadata);
+          if (metadata && metadata.profile) {
+            if (metadata.profile.name) {
+              authorDisplayName = metadata.profile.name;
             }
-          } catch (e) {
-            // Metadata might be malformed or missing, use defaults
+            if (metadata.profile.profile_image) {
+              authorAvatarUrl = metadata.profile.profile_image;
+            }
           }
-
-          uniqueUsers.set(post.author, {
-            username: post.author,
-            display_name: displayName,
-            avatar_url: avatarUrl,
-            post_count: Math.floor(Math.random() * 100) + 1, // Simulado
-            follower_count: Math.floor(Math.random() * 1000) + 50, // Simulado
-            last_post_date: post.created,
-            post_url: `https://hive.blog/@${post.author}/${post.permlink}`
-          });
+        } catch (e) {
+          // Metadata might be malformed or missing, use defaults
         }
-      });
 
-      setUsers(Array.from(uniqueUsers.values()));
-      showSuccess("Usuários da Hive carregados com sucesso!");
+        return {
+          title: post.title,
+          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''), // Truncate body
+          created: post.created,
+          permlink: post.permlink,
+          author: post.author,
+          url: `https://hive.blog/@${post.author}/${post.permlink}`,
+          replies: post.children,
+          active_votes: post.active_votes,
+          json_metadata: post.json_metadata,
+          author_display_name: authorDisplayName,
+          author_avatar_url: authorAvatarUrl,
+        };
+      }));
+
+      setPosts(processedPosts);
+      showSuccess("Postagens da Hive carregadas com sucesso!");
     } catch (error) {
-      console.error("Erro ao buscar usuários da Hive:", error);
-      showError("Falha ao carregar usuários da Hive. Tente novamente mais tarde.");
-      setUsers([]); // Clear users on error
+      console.error("Erro ao buscar postagens da Hive:", error);
+      showError("Falha ao carregar postagens da Hive. Tente novamente mais tarde.");
+      setPosts([]); // Clear posts on error
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchHiveUsers();
-  }, [fetchHiveUsers]);
+    fetchHivePosts();
+  }, [fetchHivePosts]);
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.display_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPosts = posts.filter(post =>
+    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (post.author_display_name && post.author_display_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const handleRefresh = () => {
-    showSuccess("Atualizando lista de usuários...");
-    fetchHiveUsers();
+    showSuccess("Atualizando lista de postagens...");
+    fetchHivePosts();
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
+  };
+
+  const getVoteWeight = (votes: Array<{ percent: number }>) => {
+    return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;
   };
 
   if (loading) {
@@ -135,7 +146,7 @@ const HiveUsersPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando usuários da Hive...</p>
+            <p className="mt-4 text-gray-600">Carregando postagens da Hive...</p>
           </div>
         </div>
       </div>
@@ -148,10 +159,10 @@ const HiveUsersPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Novos Usuários Hive Blockchain
+            Postagens #introduceyourself na Hive Blockchain
           </h1>
           <p className="text-lg text-gray-600 mb-6">
-            Descubra novos membros da comunidade que usam a tag <Badge className="bg-blue-100 text-blue-800">#introduceyourself</Badge>
+            Descubra as últimas postagens de introdução na comunidade Hive.
           </p>
           
           {/* Search and Controls */}
@@ -160,7 +171,7 @@ const HiveUsersPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Buscar usuários..."
+                placeholder="Buscar por título ou autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -180,8 +191,8 @@ const HiveUsersPage = () => {
               <div className="flex items-center">
                 <User className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-                  <p className="text-sm text-gray-600">Usuários encontrados</p>
+                  <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
+                  <p className="text-sm text-gray-600">Postagens encontradas</p>
                 </div>
               </div>
             </CardContent>
@@ -191,8 +202,8 @@ const HiveUsersPage = () => {
               <div className="flex items-center">
                 <Calendar className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{filteredUsers.length}</p>
-                  <p className="text-sm text-gray-600">Filtrados</p>
+                  <p className="text-2xl font-bold text-gray-900">{filteredPosts.length}</p>
+                  <p className="text-sm text-gray-600">Postagens filtradas</p>
                 </div>
               </div>
             </CardContent>
@@ -202,69 +213,67 @@ const HiveUsersPage = () => {
               <div className="flex items-center">
                 <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{users.length * 2}</p> {/* Ainda simulado */}
-                  <p className="text-sm text-gray-600">Posts totais</p>
+                  <p className="text-2xl font-bold text-gray-900">{new Set(posts.map(p => p.author)).size}</p>
+                  <p className="text-sm text-gray-600">Autores únicos</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Users Grid */}
+        {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentUsers.map((user) => (
-            <Card key={user.username} className="hover:shadow-lg transition-shadow duration-300">
+          {currentPosts.map((post) => (
+            <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                    <AvatarFallback>{user.display_name.charAt(0)}</AvatarFallback>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
+                    <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{user.display_name}</CardTitle>
+                    <CardTitle className="text-lg">{post.title}</CardTitle>
                     <CardDescription className="text-sm text-blue-600">
-                      @{user.username}
+                      Por <span className="font-medium">@{post.author}</span>
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Posts:</span>
-                    <span className="font-medium">{user.post_count}</span>
+                <p className="text-gray-700 text-sm mb-3">{post.body}</p>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <div className="flex items-center">
+                    <Calendar className="h-3 w-3 mr-1" /> {formatDate(post.created)}
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Seguidores:</span>
-                    <span className="font-medium">{user.follower_count}</span>
+                  <div className="flex items-center">
+                    <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Último post:</span>
-                    <span className="font-medium">{formatDate(user.last_post_date)}</span>
+                  <div className="flex items-center">
+                    <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
                   </div>
-                  <div className="pt-2">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      #introduceyourself
-                    </Badge>
-                  </div>
-                  <Button 
-                    className="w-full mt-4" 
-                    onClick={() => navigate(`/users/${user.username}`)} // Navigate to UserProfile page
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Ver Posts do Usuário
-                  </Button>
                 </div>
+                <div className="pt-2 mb-4">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    #introduceyourself
+                  </Badge>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate(`/users/${post.author}`)}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Ver Perfil do Autor
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Pagination */}
-        {filteredUsers.length > usersPerPage && (
+        {filteredPosts.length > postsPerPage && (
           <div className="flex justify-center mt-8">
             <div className="flex space-x-2">
-              {Array.from({ length: Math.ceil(filteredUsers.length / usersPerPage) }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: Math.ceil(filteredPosts.length / postsPerPage) }, (_, i) => i + 1).map((page) => (
                 <Button
                   key={page}
                   variant={currentPage === page ? "default" : "outline"}
@@ -279,10 +288,10 @@ const HiveUsersPage = () => {
         )}
 
         {/* Empty State */}
-        {filteredUsers.length === 0 && (
+        {filteredPosts.length === 0 && (
           <div className="text-center py-12">
             <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhum usuário encontrado</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhuma postagem encontrada</h3>
             <p className="text-gray-600">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
