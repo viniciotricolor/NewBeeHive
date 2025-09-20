@@ -19,5 +19,4 @@ Nossa missão é simplificar a descoberta de novos talentos e histórias na Hive
 *   Visualização de perfil de usuário com posts.
 *   Visualização detalhada de posts com comentários.
 *   Sistema de tema (Hive).
-*   Remoção de todas as menções a "Dyad".
 *   Adição da página "Sobre" e rodapé.
