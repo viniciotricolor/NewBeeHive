@@ -43,20 +43,17 @@ const HiveUsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
-  const [usernameSearchTerm, setUsernameSearchTerm] = useState(''); // Termo de busca para nome de usuário
-  const debouncedUsernameSearchTerm = useDebounce(usernameSearchTerm, 500); // Debounce para o termo de busca
+  const [usernameSearchTerm, setUsernameSearchTerm] = useState('');
+  const debouncedUsernameSearchTerm = useDebounce(usernameSearchTerm, 500);
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const postsPerLoad = 12;
-  const API_BATCH_SIZE = 100;
   const navigate = useNavigate();
 
-  // Novo estado para o post de introdução de um usuário específico
   const [userIntroPost, setUserIntroPost] = useState<Post | null>(null);
   const [loadingUserIntroPost, setLoadingUserIntroPost] = useState(false);
 
-  // Função auxiliar para processar um post bruto da API
   const processRawPost = useCallback(async (post: any): Promise<Post> => {
     let authorDisplayName = post.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
@@ -91,7 +88,6 @@ const HiveUsersPage = () => {
     };
   }, []);
 
-  // Função para buscar o post de introdução de um usuário específico
   const fetchUserIntroPost = useCallback(async (username: string) => {
     if (!username) {
       setUserIntroPost(null);
@@ -99,22 +95,20 @@ const HiveUsersPage = () => {
     }
 
     setLoadingUserIntroPost(true);
-    setUserIntroPost(null); // Limpa o resultado anterior
-    setPosts([]); // Limpa o feed geral ao buscar um usuário específico
-    setHasMore(false); // Não há mais para carregar para uma busca única
+    setUserIntroPost(null);
+    setPosts([]);
+    setHasMore(false);
 
     try {
       const params: PostParams = {
         tag: 'introduceyourself',
-        limit: 1, // Esperamos apenas um post de introdução
+        limit: 1,
         start_author: username,
       };
       
-      // Usamos getDiscussionsByCreated para buscar posts por autor e tag
       const rawPosts = await getDiscussionsByCreated(params);
 
       if (rawPosts && rawPosts.length > 0) {
-        // Filtra para garantir que é o post de introdução do autor correto
         const foundPost = rawPosts.find((p: any) => p.author === username && p.permlink.includes('introduceyourself'));
         if (foundPost) {
           const processedPost = await processRawPost(foundPost);
@@ -134,14 +128,12 @@ const HiveUsersPage = () => {
     }
   }, [processRawPost]);
 
-  // Função para buscar posts do feed geral ou de introdução (hot/trending)
   const fetchHivePosts = useCallback(async (
     isInitialLoad: boolean = true,
     currentSortOption: SortOption = sortOption,
     startAuthor: string = '',
     startPermlink: string = ''
   ) => {
-    // Não busca posts gerais se uma busca específica de usuário estiver ativa
     if (userIntroPost || loadingUserIntroPost || usernameSearchTerm.trim()) {
       return;
     }
@@ -156,84 +148,45 @@ const HiveUsersPage = () => {
 
     try {
       let discussionMethod;
+      let tagToUse = '';
+
       switch (currentSortOption) {
         case 'hot':
           discussionMethod = getDiscussionsByHot;
+          tagToUse = 'introduceyourself'; // Hot posts for introduceyourself
           break;
         case 'trending':
           discussionMethod = getDiscussionsByTrending;
+          tagToUse = 'introduceyourself'; // Trending posts for introduceyourself
           break;
         case 'created':
         default:
           discussionMethod = getDiscussionsByCreated;
+          tagToUse = ''; // General feed for created posts
           break;
       }
 
-      let fetchedPosts: Post[] = [];
-      const tagToUse = currentSortOption === 'created' ? '' : 'introduceyourself'; // Tag vazia para feed geral
+      const params: PostParams = {
+        tag: tagToUse,
+        limit: postsPerLoad + 1
+      };
 
-      if (currentSortOption === 'created') {
-        const fetchAllCreatedPostsRecursive = async (
-          currentAccumulatedPosts: Post[] = [],
-          currentStartAuthor: string = '',
-          currentStartPermlink: string = ''
-        ): Promise<Post[]> => {
-          const params: PostParams = {
-            tag: tagToUse,
-            limit: API_BATCH_SIZE + 1,
-          };
-
-          if (currentStartAuthor && currentStartPermlink) {
-            params.start_author = currentStartAuthor;
-            params.start_permlink = currentStartPermlink;
-          }
-
-          const rawPostsBatch = await discussionMethod(params);
-
-          if (!rawPostsBatch || rawPostsBatch.length === 0) {
-            return currentAccumulatedPosts;
-          }
-
-          const postsToProcess = (currentStartAuthor && currentStartPermlink) ? rawPostsBatch.slice(1) : rawPostsBatch;
-
-          if (postsToProcess.length === 0) {
-            return currentAccumulatedPosts;
-          }
-
-          let postsForThisBatch: Post[] = [];
-          let lastValidPostInBatch: any | null = null;
-
-          for (const post of postsToProcess) {
-            postsForThisBatch.push(await processRawPost(post));
-            lastValidPostInBatch = post;
-          }
-
-          const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
-          return newAccumulatedPosts;
-        };
-
-        fetchedPosts = await fetchAllCreatedPostsRecursive();
-        setHasMore(false); // Desabilitar 'Carregar Mais' para o feed geral por enquanto
-      } else {
-        const params: PostParams = {
-          tag: tagToUse,
-          limit: postsPerLoad + 1
-        };
-
-        if (startAuthor && startPermlink) {
-          params.start_author = startAuthor;
-          params.start_permlink = startPermlink;
-        }
-
-        const rawPosts = await discussionMethod(params);
-        
-        const postsToProcess = (startAuthor && startPermlink) ? rawPosts.slice(1) : rawPosts;
-
-        fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
-        setHasMore(rawPosts.length > postsPerLoad);
+      if (startAuthor && startPermlink) {
+        params.start_author = startAuthor;
+        params.start_permlink = startPermlink;
       }
 
+      const rawPosts = await discussionMethod(params);
+      
+      // Remove the first item if it's a duplicate from the previous page (API behavior)
+      const postsToProcess = (startAuthor && startPermlink && rawPosts.length > 0 && rawPosts[0].author === startAuthor && rawPosts[0].permlink === startPermlink)
+        ? rawPosts.slice(1)
+        : rawPosts;
+
+      const fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
+      
       setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
+      setHasMore(rawPosts.length > postsPerLoad); // Check if there are more posts than requested limit
 
       if (isInitialLoad) {
         showSuccess("Postagens da Hive carregadas com sucesso!");
@@ -251,28 +204,20 @@ const HiveUsersPage = () => {
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption, userIntroPost, loadingUserIntroPost, usernameSearchTerm, processRawPost]);
+  }, [sortOption, userIntroPost, loadingUserIntroPost, usernameSearchTerm, processRawPost, postsPerLoad]);
 
   useEffect(() => {
-    // Só busca posts gerais se não houver uma busca específica de usuário ativa
     if (!usernameSearchTerm.trim() && !userIntroPost && !loadingUserIntroPost) {
       fetchHivePosts(true, sortOption);
     }
   }, [sortOption, usernameSearchTerm, userIntroPost, loadingUserIntroPost, fetchHivePosts]);
 
-  // A função filteredPosts não é mais necessária para a busca principal,
-  // pois estamos lidando com a busca específica e o feed geral separadamente.
-  // No entanto, se o usuário estiver no feed geral e digitar algo no campo de busca,
-  // ele ainda pode querer filtrar os posts *já carregados*.
-  // Para a nova funcionalidade, o campo de busca aciona uma nova API.
-  // Vou remover a filtragem client-side para simplificar, já que a busca agora é via API.
-
   const handleSearchClick = () => {
     if (usernameSearchTerm.trim()) {
       fetchUserIntroPost(usernameSearchTerm.trim());
     } else {
-      setUserIntroPost(null); // Limpa a busca específica se o input estiver vazio
-      fetchHivePosts(true, sortOption); // Volta para o feed geral
+      setUserIntroPost(null);
+      fetchHivePosts(true, sortOption);
     }
   };
 
@@ -283,6 +228,13 @@ const HiveUsersPage = () => {
       fetchUserIntroPost(usernameSearchTerm.trim());
     } else {
       fetchHivePosts(true, sortOption);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (posts.length > 0 && hasMore && !loadingMore) {
+      const lastPost = posts[posts.length - 1];
+      fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
     }
   };
 
@@ -306,7 +258,6 @@ const HiveUsersPage = () => {
     }
   };
 
-  // Determina qual lista de posts exibir
   const postsToDisplay = userIntroPost ? [userIntroPost] : posts;
   const isLoadingContent = loadingUserIntroPost || (loading && posts.length === 0);
   const isEmptyState = postsToDisplay.length === 0 && !isLoadingContent;
@@ -322,7 +273,7 @@ const HiveUsersPage = () => {
           <p className="text-lg text-muted-foreground mb-2">
             {userIntroPost ? 'Este é o post de introdução encontrado para o usuário.' : (sortOption === 'created' ? 'Descubra as postagens mais recentes de toda a comunidade Hive.' : 'Descubra as últimas postagens de introdução na comunidade Hive.')}
           </p>
-          {lastUpdated && !userIntroPost && ( // Só mostra a última atualização para o feed geral
+          {lastUpdated && !userIntroPost && (
             <p className="text-sm text-muted-foreground mb-6">
               Última atualização: {formatDate(lastUpdated)}
             </p>
@@ -348,7 +299,6 @@ const HiveUsersPage = () => {
                 {loadingUserIntroPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
             </div>
-            {/* DropdownMenu e Botão Atualizar são desabilitados se uma busca específica estiver ativa */}
             {!userIntroPost && !loadingUserIntroPost && (
               <>
                 <DropdownMenu>
@@ -502,7 +452,7 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Load More Button */}
-        {hasMore && postsToDisplay.length > 0 && sortOption !== 'created' && !userIntroPost && (
+        {hasMore && postsToDisplay.length > 0 && !userIntroPost && (
           <div className="flex justify-center mt-8">
             <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
@@ -511,14 +461,14 @@ const HiveUsersPage = () => {
         )}
 
         {/* Empty State */}
-        {isEmptyState && !usernameSearchTerm.trim() && ( // Estado vazio para o feed geral
+        {isEmptyState && !usernameSearchTerm.trim() && (
           <div className="text-center py-12 text-muted-foreground">
             <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem encontrada</h3>
             <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
-        {isEmptyState && usernameSearchTerm.trim() && !loadingUserIntroPost && ( // Estado vazio para busca específica
+        {isEmptyState && usernameSearchTerm.trim() && !loadingUserIntroPost && (
           <div className="text-center py-12 text-muted-foreground">
             <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum post de introdução encontrado para "{usernameSearchTerm}"</h3>
