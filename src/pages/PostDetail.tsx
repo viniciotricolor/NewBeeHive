@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { getContent, getAccounts, getPostComments, formatReputation } from '@/services/hive'; // Importar formatReputation
+import { getContent, getAccounts, getPostComments, formatReputation } from '@/services/hive';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -40,10 +40,11 @@ interface Comment {
   author_avatar_url?: string;
   pending_payout_value: string;
   depth: number;
-  author_reputation?: number; // Adicionado para armazenar a reputação do autor
+  author_reputation?: number; // Reputação formatada
+  raw_author_reputation?: number; // Reputação bruta
 }
 
-const REPUTATION_THRESHOLD = 30; // Reputação mínima para exibir um comentário (aumentado de 25 para 30)
+// REPUTATION_THRESHOLD removido, pois o filtro será baseado na reputação bruta negativa.
 
 const PostDetail = () => {
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
@@ -53,7 +54,7 @@ const PostDetail = () => {
   const [loadingPost, setLoadingPost] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const processRawComment = async (comment: any, authorReputationMap: Map<string, number>): Promise<Comment> => {
+  const processRawComment = async (comment: any, authorReputationMap: Map<string, { formatted: number, raw: number }>): Promise<Comment> => {
     let authorDisplayName = comment.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${comment.author}/avatar`;
 
@@ -71,6 +72,8 @@ const PostDetail = () => {
       // Metadados podem estar malformados ou ausentes, fallback já definido
     }
 
+    const reputationInfo = authorReputationMap.get(comment.author);
+
     return {
       id: comment.id,
       author: comment.author,
@@ -84,7 +87,8 @@ const PostDetail = () => {
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: comment.pending_payout_value,
       depth: comment.depth,
-      author_reputation: authorReputationMap.get(comment.author), // Adiciona a reputação
+      author_reputation: reputationInfo?.formatted, // Reputação formatada
+      raw_author_reputation: reputationInfo?.raw, // Reputação bruta
     };
   };
 
@@ -164,18 +168,21 @@ const PostDetail = () => {
 
       // Buscar informações de conta para todos os autores
       const accountsData = await getAccounts({ names: uniqueAuthors });
-      const authorReputationMap = new Map<string, number>();
+      const authorReputationMap = new Map<string, { formatted: number, raw: number }>();
       accountsData.forEach((account: any) => {
-        authorReputationMap.set(account.name, formatReputation(account.reputation));
+        authorReputationMap.set(account.name, {
+          formatted: formatReputation(account.reputation),
+          raw: account.reputation, // Armazenar a reputação bruta
+        });
       });
 
       const processedComments = await Promise.all(
         rawComments.map(comment => processRawComment(comment, authorReputationMap))
       );
 
-      // Filtrar comentários com base na reputação do autor
+      // Filtrar comentários onde a reputação bruta do autor é negativa
       const filteredComments = processedComments.filter(
-        comment => (comment.author_reputation ?? 0) >= REPUTATION_THRESHOLD
+        comment => (comment.raw_author_reputation ?? 0) >= 0 // Manter se a reputação bruta for 0 ou positiva
       );
 
       setComments(filteredComments);
