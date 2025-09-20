@@ -44,6 +44,7 @@ const HiveUsersPage = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null); // Novo estado para o timestamp da última atualização
   const postsPerLoad = 12;
   const navigate = useNavigate();
 
@@ -55,7 +56,7 @@ const HiveUsersPage = () => {
   ) => {
     if (isInitialLoad) {
       setLoading(true);
-      setPosts([]); // Clear posts on initial load or refresh
+      setPosts([]); // Limpa as postagens no carregamento inicial ou atualização
     } else {
       setLoadingMore(true);
     }
@@ -77,7 +78,7 @@ const HiveUsersPage = () => {
 
       const params: any = {
         tag: 'introduceyourself',
-        limit: postsPerLoad + (isInitialLoad ? 0 : 1) // Fetch one extra to check if there's more
+        limit: postsPerLoad + (isInitialLoad ? 0 : 1) // Busca uma postagem extra para verificar se há mais
       };
 
       if (!isInitialLoad && lastAuthor && lastPermlink) {
@@ -87,12 +88,12 @@ const HiveUsersPage = () => {
 
       const rawPosts = await discussionMethod(params);
 
-      // Remove the first post if it's a duplicate from the previous load
-      const newPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
+      // Remove a primeira postagem se for uma duplicata do carregamento anterior
+      let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
 
-      const processedPosts: Post[] = await Promise.all(newPosts.map(async (post: any) => {
+      const processedPosts: Post[] = await Promise.all(newRawPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
-        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`; // Default fallback
+        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`; // Fallback padrão
 
         try {
           const metadata = JSON.parse(post.json_metadata);
@@ -105,12 +106,12 @@ const HiveUsersPage = () => {
             }
           }
         } catch (e) {
-          // Metadata might be malformed or missing, fallback already set
+          // Metadados podem estar malformados ou ausentes, fallback já definido
         }
 
         return {
           title: post.title,
-          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''), // Truncate body
+          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''), // Trunca o corpo
           created: post.created,
           permlink: post.permlink,
           author: post.author,
@@ -123,16 +124,32 @@ const HiveUsersPage = () => {
         };
       }));
 
-      setPosts(prevPosts => isInitialLoad ? processedPosts : [...prevPosts, ...processedPosts]);
-      setHasMore(rawPosts.length > postsPerLoad);
+      // Aplica o filtro de 7 dias SOMENTE para a ordenação 'created'
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      sevenDaysAgo.setHours(0, 0, 0, 0); // Normaliza para o início do dia
+
+      const filteredByDatePosts = currentSortOption === 'created'
+        ? processedPosts.filter(post => {
+            const postDate = new Date(post.created + 'Z'); // Garante interpretação UTC
+            return postDate >= sevenDaysAgo;
+          })
+        : processedPosts;
+
+      setPosts(prevPosts => isInitialLoad ? filteredByDatePosts : [...prevPosts, ...filteredByDatePosts]);
+      setHasMore(rawPosts.length > postsPerLoad); // hasMore baseado na resposta bruta da API
+
       if (isInitialLoad) {
         showSuccess("Postagens da Hive carregadas com sucesso!");
       }
+      setLastUpdated(new Date()); // Atualiza o timestamp no carregamento bem-sucedido
+
     } catch (error: any) {
       console.error("Erro ao buscar postagens da Hive:", error);
       showError(`Falha ao carregar postagens da Hive: ${error.message}.`);
       setPosts([]);
       setHasMore(false);
+      setLastUpdated(null); // Limpa o timestamp em caso de erro
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -163,8 +180,9 @@ const HiveUsersPage = () => {
     fetchHivePosts(true, sortOption);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+  const formatDate = (dateInput: string | Date) => { // Modificado para aceitar objeto Date
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -179,7 +197,7 @@ const HiveUsersPage = () => {
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
-      case 'created': return 'Mais Recentes';
+      case 'created': return 'Mais Recentes (7 dias)'; // Rótulo atualizado
       case 'hot': return 'Mais Comentadas';
       case 'trending': return 'Mais Votadas';
       default: return 'Ordenar por';
@@ -194,9 +212,14 @@ const HiveUsersPage = () => {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-4">
             Postagens #introduceyourself na Hive Blockchain
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-2">
             Descubra as últimas postagens de introdução na comunidade Hive.
           </p>
+          {lastUpdated && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Última atualização: {formatDate(lastUpdated)}
+            </p>
+          )}
           
           {/* Search and Controls */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -218,7 +241,7 @@ const HiveUsersPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 dark:border-gray-700">
                 <DropdownMenuItem onClick={() => setSortOption('created')} className="dark:text-gray-50 hover:dark:bg-gray-700">
-                  Mais Recentes
+                  Mais Recentes (7 dias)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortOption('hot')} className="dark:text-gray-50 hover:dark:bg-gray-700">
                   Mais Comentadas
