@@ -265,7 +265,7 @@ const HiveUsersPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            {userFirstPost ? `Primeiro Post de @${userFirstPost.author}` : 'Explorar Postagens de Introdução na Hive Blockchain'}
+            {userFirstPost ? `Primeiro Post de @${userFirstPost.author}` : 'NewBee Hive 🐝 - Explorar Postagens de Introdução na Hive Blockchain'}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
             {userFirstPost ? 'Este é o primeiro post encontrado para o usuário.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
