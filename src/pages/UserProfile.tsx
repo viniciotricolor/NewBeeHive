@@ -20,6 +20,7 @@ interface Post {
   replies: number;
   active_votes: Array<{ percent: number }>;
   json_metadata: string;
+  author_avatar_url?: string; // Adicionado para exibir o avatar nos posts do perfil
 }
 
 interface UserProfileData {
@@ -57,7 +58,7 @@ const UserProfilePage = () => {
       if (accountData.error) throw new Error(accountData.error.message);
 
       let displayName = username;
-      let avatarUrl = "https://via.placeholder.com/150";
+      let avatarUrl = `https://images.hive.blog/u/${username}/avatar`; // Default fallback
       let about = "";
 
       if (accountData.result && accountData.result.length > 0) {
@@ -100,6 +101,7 @@ const UserProfilePage = () => {
         replies: post.children,
         active_votes: post.active_votes,
         json_metadata: post.json_metadata,
+        author_avatar_url: avatarUrl, // Usar o avatar do perfil para os posts do próprio usuário
       }));
 
       setProfile({
@@ -203,11 +205,19 @@ const UserProfilePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.posts.map((post) => (
               <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="text-xl">{post.title}</CardTitle>
-                  <CardDescription className="flex items-center text-sm text-gray-500">
-                    <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
-                  </CardDescription>
+                <CardHeader className="pb-4"> {/* Adicionado padding-bottom para espaçamento */}
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={post.author_avatar_url} alt={post.author} />
+                      <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl">{post.title}</CardTitle>
+                      <CardDescription className="flex items-center text-sm text-gray-500">
+                        <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-4">{post.body}</p>

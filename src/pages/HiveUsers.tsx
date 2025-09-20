@@ -65,7 +65,7 @@ const HiveUsersPage = () => {
       const rawPosts = data.result;
       const processedPosts: Post[] = await Promise.all(rawPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
-        let authorAvatarUrl = "https://via.placeholder.com/150"; // Default placeholder
+        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`; // Default fallback
 
         try {
           const metadata = JSON.parse(post.json_metadata);
@@ -78,7 +78,7 @@ const HiveUsersPage = () => {
             }
           }
         } catch (e) {
-          // Metadata might be malformed or missing, use defaults
+          // Metadata might be malformed or missing, fallback already set
         }
 
         return {
