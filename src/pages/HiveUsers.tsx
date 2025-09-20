@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Search, User, ExternalLink } from "lucide-react";
+import { Calendar, Search, User, ExternalLink, RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 
 interface HiveUser {
   username: string;
   display_name: string;
   avatar_url: string;
-  post_count: number;
-  follower_count: number;
+  post_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
+  follower_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
   last_post_date: string;
   post_url: string;
 }
@@ -26,72 +26,82 @@ const HiveUsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 12;
 
-  // Simulação de dados (em um app real, isso viria de uma API Hive)
-  useEffect(() => {
-    // Dados simulados para demonstração
-    const mockUsers: HiveUser[] = [
-      {
-        username: "hiveuser123",
-        display_name: "João Silva",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 45,
-        follower_count: 234,
-        last_post_date: "2024-01-15",
-        post_url: "https://hive.blog/@hiveuser123/introduceyourself"
-      },
-      {
-        username: "blockchain_dev",
-        display_name: "Maria Santos",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 12,
-        follower_count: 89,
-        last_post_date: "2024-01-14",
-        post_url: "https://hive.blog/@blockchain_dev/introduceyourself"
-      },
-      {
-        username: "crypto_enthusiast",
-        display_name: "Pedro Oliveira",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 8,
-        follower_count: 156,
-        last_post_date: "2024-01-13",
-        post_url: "https://hive.blog/@crypto_enthusiast/introduceyourself"
-      },
-      {
-        username: "web3_builder",
-        display_name: "Ana Costa",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 23,
-        follower_count: 412,
-        last_post_date: "2024-01-12",
-        post_url: "https://hive.blog/@web3_builder/introduceyourself"
-      },
-      {
-        username: "defi_explorer",
-        display_name: "Carlos Mendes",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 67,
-        follower_count: 789,
-        last_post_date: "2024-01-11",
-        post_url: "https://hive.blog/@defi_explorer/introduceyourself"
-      },
-      {
-        username: "nft_artist",
-        display_name: "Laura Ferreira",
-        avatar_url: "https://via.placeholder.com/150",
-        post_count: 34,
-        follower_count: 567,
-        last_post_date: "2024-01-10",
-        post_url: "https://hive.blog/@nft_artist/introduceyourself"
-      }
-    ];
+  const fetchHiveUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('https://api.hive.blog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'condenser_api.get_discussions_by_created',
+          params: [{
+            tag: 'introduceyourself',
+            limit: 50 // Buscar os 50 posts mais recentes com a tag
+          }],
+          id: 1,
+        }),
+      });
 
-    // Simular carregamento
-    setTimeout(() => {
-      setUsers(mockUsers);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      const rawPosts = data.result;
+      const uniqueUsers = new Map<string, HiveUser>();
+
+      rawPosts.forEach((post: any) => {
+        if (!uniqueUsers.has(post.author)) {
+          let displayName = post.author;
+          let avatarUrl = "https://via.placeholder.com/150"; // Default placeholder
+
+          try {
+            const metadata = JSON.parse(post.json_metadata);
+            if (metadata && metadata.profile) {
+              if (metadata.profile.name) {
+                displayName = metadata.profile.name;
+              }
+              if (metadata.profile.profile_image) {
+                avatarUrl = metadata.profile.profile_image;
+              }
+            }
+          } catch (e) {
+            // Metadata might be malformed or missing, use defaults
+          }
+
+          uniqueUsers.set(post.author, {
+            username: post.author,
+            display_name: displayName,
+            avatar_url: avatarUrl,
+            post_count: Math.floor(Math.random() * 100) + 1, // Simulado
+            follower_count: Math.floor(Math.random() * 1000) + 50, // Simulado
+            last_post_date: post.created,
+            post_url: `https://hive.blog/@${post.author}/${post.permlink}`
+          });
+        }
+      });
+
+      setUsers(Array.from(uniqueUsers.values()));
+      showSuccess("Usuários da Hive carregados com sucesso!");
+    } catch (error) {
+      console.error("Erro ao buscar usuários da Hive:", error);
+      showError("Falha ao carregar usuários da Hive. Tente novamente mais tarde.");
+      setUsers([]); // Clear users on error
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchHiveUsers();
+  }, [fetchHiveUsers]);
 
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,14 +115,8 @@ const HiveUsersPage = () => {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const handleRefresh = () => {
-    setLoading(true);
     showSuccess("Atualizando lista de usuários...");
-    
-    // Simular refresh
-    setTimeout(() => {
-      setLoading(false);
-      showSuccess("Lista atualizada com sucesso!");
-    }, 1000);
+    fetchHiveUsers();
   };
 
   const formatDate = (dateString: string) => {
@@ -161,7 +165,7 @@ const HiveUsersPage = () => {
               />
             </div>
             <Button onClick={handleRefresh} className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               Atualizar
             </Button>
           </div>
@@ -196,7 +200,7 @@ const HiveUsersPage = () => {
               <div className="flex items-center">
                 <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{users.length * 2}</p>
+                  <p className="text-2xl font-bold text-gray-900">{users.length * 2}</p> {/* Ainda simulado */}
                   <p className="text-sm text-gray-600">Posts totais</p>
                 </div>
               </div>
