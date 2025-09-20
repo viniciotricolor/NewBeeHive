@@ -262,7 +262,7 @@ const HiveUsersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
+    <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

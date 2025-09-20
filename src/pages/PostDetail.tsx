@@ -213,7 +213,7 @@ const PostDetail = () => {
 
   if (loadingPost) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 flex justify-center items-center">
+      <div className="min-h-screen bg-background p-4 flex justify-center items-center"> {/* Alterado para bg-background */}
         <PostCardSkeleton />
       </div>
     );
@@ -221,7 +221,7 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 text-center dark:text-gray-300">
+      <div className="min-h-screen bg-background p-4 text-center dark:text-gray-300"> {/* Alterado para bg-background */}
         <h2 className="text-2xl font-bold mb-4">Postagem não encontrada</h2>
         <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
         <Button onClick={() => navigate('/')}>Voltar para a Home</Button>
@@ -230,7 +230,7 @@ const PostDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
+    <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
       <div className="max-w-4xl mx-auto">
         <Button onClick={() => navigate(-1)} className="mb-6 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
           Voltar

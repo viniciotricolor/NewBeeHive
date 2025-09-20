@@ -137,7 +137,7 @@ const UserProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
+      <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
         <div className="max-w-4xl mx-auto">
           <Link to="/hive-users">
             <Button variant="outline" className="mb-4 dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
@@ -157,7 +157,7 @@ const UserProfilePage = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 text-center">
+      <div className="min-h-screen bg-background p-4 text-center"> {/* Alterado para bg-background */}
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-4">Perfil não encontrado</h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">Não foi possível carregar o perfil para @{username}.</p>
         <Link to="/hive-users">
@@ -171,7 +171,7 @@ const UserProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
+    <div className="min-h-screen bg-background p-4"> {/* Alterado para bg-background */}
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link to="/hive-users">
