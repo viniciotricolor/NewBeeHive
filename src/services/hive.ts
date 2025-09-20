@@ -1,6 +1,6 @@
 const HIVE_API_NODE = 'https://api.hive.blog'; // Changed API node to a more common one
 
-interface PostParams {
+export interface PostParams { // Adicionado 'export' aqui
   tag: string;
   limit: number;
   start_author?: string;
