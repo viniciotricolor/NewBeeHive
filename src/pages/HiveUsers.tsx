@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, callHiveApi } from '@/services/hive';
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, getAccounts } from '@/services/hive'; // Importar getAccounts
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {
@@ -24,7 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Importar componentes Select
+} from "@/components/ui/select";
 
 interface Post {
   title: string;
@@ -56,6 +56,21 @@ const countries = [
   // Adicione mais países conforme necessário
 ];
 
+// Função auxiliar para normalizar a string de localização para uma tag de país
+const normalizeLocationToCountryTag = (location: string): string | null => {
+  if (!location) return null;
+  const lowerLocation = location.toLowerCase();
+  if (lowerLocation.includes('brasil') || lowerLocation.includes('brazil')) return 'brazil';
+  if (lowerLocation.includes('portugal')) return 'portugal';
+  if (lowerLocation.includes('usa') || lowerLocation.includes('united states') || lowerLocation.includes('estados unidos')) return 'usa';
+  if (lowerLocation.includes('canada')) return 'canada';
+  if (lowerLocation.includes('uk') || lowerLocation.includes('united kingdom') || lowerLocation.includes('reino unido')) return 'uk';
+  if (lowerLocation.includes('germany') || lowerLocation.includes('deutschland') || lowerLocation.includes('alemanha')) return 'germany';
+  if (lowerLocation.includes('france') || lowerLocation.includes('frança')) return 'france';
+  if (lowerLocation.includes('spain') || lowerLocation.includes('espanha')) return 'spain';
+  return null;
+};
+
 const HiveUsersPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +79,7 @@ const HiveUsersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [sortOption, setSortOption] = useState<SortOption>('created');
-  const [selectedCountry, setSelectedCountry] = useState<string>('all'); // Novo estado para o país selecionado
+  const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const postsPerLoad = 12;
@@ -112,26 +127,54 @@ const HiveUsersPage = () => {
 
       let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
 
+      // Coletar autores únicos para buscar seus perfis em lote
+      const uniqueAuthors = Array.from(new Set(newRawPosts.map((post: any) => post.author)));
+      const authorAccountsMap = new Map<string, any>();
+
+      if (uniqueAuthors.length > 0) {
+        try {
+          const accountsData = await getAccounts({ names: uniqueAuthors });
+          accountsData.forEach((account: any) => {
+            authorAccountsMap.set(account.name, account);
+          });
+        } catch (e) {
+          console.warn("Não foi possível buscar contas de autores para inferência de localização:", e);
+        }
+      }
+
       const processedPosts: Post[] = await Promise.all(newRawPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
         let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
-        let postTags: string[] = []; // Inicializar tags
+        let postTags: string[] = [];
 
-        try {
-          const metadata = JSON.parse(post.json_metadata);
-          if (metadata && metadata.profile) {
-            if (metadata.profile.name) {
-              authorDisplayName = metadata.profile.name;
+        const account = authorAccountsMap.get(post.author);
+        if (account) {
+          try {
+            const metadata = JSON.parse(account.json_metadata);
+            if (metadata && metadata.profile) {
+              if (metadata.profile.name) authorDisplayName = metadata.profile.name;
+              if (metadata.profile.profile_image) authorAvatarUrl = metadata.profile.profile_image;
+              if (metadata.profile.location) {
+                const inferredCountryTag = normalizeLocationToCountryTag(metadata.profile.location);
+                if (inferredCountryTag) {
+                  postTags.push(inferredCountryTag); // Adicionar país inferido às tags
+                }
+              }
             }
-            if (metadata.profile.profile_image) {
-              authorAvatarUrl = metadata.profile.profile_image;
-            }
+          } catch (e) {
+            console.warn("Não foi possível analisar metadados do usuário para localização:", e);
           }
-          if (metadata && metadata.tags && Array.isArray(metadata.tags)) {
-            postTags = metadata.tags.map((tag: string) => tag.toLowerCase());
+        }
+
+        // Adicionar tags existentes da postagem (se houver)
+        try {
+          const postMetadata = JSON.parse(post.json_metadata);
+          if (postMetadata && postMetadata.tags && Array.isArray(postMetadata.tags)) {
+            // Usar Set para garantir tags únicas e adicionar as tags da postagem
+            postTags = [...new Set([...postTags, ...postMetadata.tags.map((tag: string) => tag.toLowerCase())])];
           }
         } catch (e) {
-          // Metadados podem estar malformados ou ausentes, fallback já definido
+          // Metadados da postagem podem estar malformados ou ausentes
         }
 
         return {
@@ -146,7 +189,7 @@ const HiveUsersPage = () => {
           json_metadata: post.json_metadata,
           author_display_name: authorDisplayName,
           author_avatar_url: authorAvatarUrl,
-          tags: postTags, // Atribuir tags processadas
+          tags: postTags, // Atribuir tags processadas (incluindo país inferido)
         };
       }));
 
