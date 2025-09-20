@@ -45,7 +45,8 @@ const HiveUsersPage = () => {
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const postsPerLoad = 12;
+  const postsPerLoad = 12; // Used for display and for 'hot'/'trending' API limit
+  const API_BATCH_SIZE = 100; // Number of posts to fetch per API call for 'created' option
   const navigate = useNavigate();
 
   const fetchHivePosts = useCallback(async (
@@ -57,6 +58,7 @@ const HiveUsersPage = () => {
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
+      setHasMore(false); // Assume no more until proven otherwise for 'created'
     } else {
       setLoadingMore(true);
     }
@@ -76,21 +78,8 @@ const HiveUsersPage = () => {
           break;
       }
 
-      const params: any = {
-        tag: 'introduceyourself',
-        limit: postsPerLoad + (isInitialLoad ? 0 : 1)
-      };
-
-      if (!isInitialLoad && lastAuthor && lastPermlink) {
-        params.start_author = lastAuthor;
-        params.start_permlink = lastPermlink;
-      }
-
-      const rawPosts = await discussionMethod(params);
-
-      let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
-
-      const processedPosts: Post[] = await Promise.all(newRawPosts.map(async (post: any) => {
+      // Helper to process a single raw post into the Post interface
+      const processRawPost = async (post: any): Promise<Post> => {
         let authorDisplayName = post.author;
         let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
 
@@ -121,21 +110,99 @@ const HiveUsersPage = () => {
           author_display_name: authorDisplayName,
           author_avatar_url: authorAvatarUrl,
         };
-      }));
+      };
 
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
+      let finalPosts: Post[] = [];
 
-      const filteredByDatePosts = currentSortOption === 'created'
-        ? processedPosts.filter(post => {
+      if (currentSortOption === 'created') {
+        // Recursive helper to fetch all posts for 'created' option within 7 days
+        const fetchAllCreatedPosts = async (
+          currentAccumulatedPosts: Post[] = [],
+          currentStartAuthor: string = '',
+          currentStartPermlink: string = ''
+        ): Promise<Post[]> => {
+          const params: any = {
+            tag: 'introduceyourself',
+            limit: API_BATCH_SIZE + 1 // Fetch one more to check if there are more pages
+          };
+
+          if (currentStartAuthor && currentStartPermlink) {
+            params.start_author = currentStartAuthor;
+            params.start_permlink = currentStartPermlink;
+          }
+
+          const rawPostsBatch = await discussionMethod(params);
+
+          if (!rawPostsBatch || rawPostsBatch.length === 0) {
+            return currentAccumulatedPosts; // No more posts
+          }
+
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          sevenDaysAgo.setHours(0, 0, 0, 0);
+
+          let postsForThisBatch: Post[] = [];
+          let lastPostInBatch: any | null = null;
+          let shouldContinueFetching = false;
+
+          // Process posts from the batch
+          for (let i = 0; i < rawPostsBatch.length; i++) {
+            const post = rawPostsBatch[i];
             const postDate = new Date(post.created + 'Z');
-            return postDate >= sevenDaysAgo;
-          })
-        : processedPosts;
 
-      setPosts(prevPosts => isInitialLoad ? filteredByDatePosts : [...prevPosts, ...filteredByDatePosts]);
-      setHasMore(rawPosts.length > postsPerLoad);
+            if (postDate >= sevenDaysAgo) {
+              // Only add if within 7 days
+              postsForThisBatch.push(await processRawPost(post));
+            } else {
+              // If we hit a post older than 7 days, stop processing this batch and don't fetch more
+              shouldContinueFetching = false;
+              break;
+            }
+
+            if (i === rawPostsBatch.length - 1) {
+              lastPostInBatch = post;
+            }
+          }
+
+          const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
+
+          // Determine if we need to fetch more
+          // Continue if we fetched a full batch (API_BATCH_SIZE + 1) and the last post was still within 7 days
+          if (rawPostsBatch.length === API_BATCH_SIZE + 1 && lastPostInBatch && new Date(lastPostInBatch.created + 'Z') >= sevenDaysAgo) {
+            shouldContinueFetching = true;
+          } else {
+            shouldContinueFetching = false;
+          }
+
+          if (shouldContinueFetching && lastPostInBatch) {
+            return fetchAllCreatedPosts(newAccumulatedPosts, lastPostInBatch.author, lastPostInBatch.permlink);
+          } else {
+            return newAccumulatedPosts;
+          }
+        };
+
+        finalPosts = await fetchAllCreatedPosts();
+        setHasMore(false); // All available posts within 7 days are fetched, so no more to load
+      } else {
+        // Existing logic for 'hot' and 'trending' with pagination
+        const params: any = {
+          tag: 'introduceyourself',
+          limit: postsPerLoad + (isInitialLoad ? 0 : 1)
+        };
+
+        if (!isInitialLoad && lastAuthor && lastPermlink) {
+          params.start_author = lastAuthor;
+          params.start_permlink = lastPermlink;
+        }
+
+        const rawPosts = await discussionMethod(params);
+        let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
+
+        finalPosts = await Promise.all(newRawPosts.map(processRawPost));
+        setHasMore(rawPosts.length > postsPerLoad);
+      }
+
+      setPosts(prevPosts => isInitialLoad ? finalPosts : [...prevPosts, ...finalPosts]);
 
       if (isInitialLoad) {
         showSuccess("Postagens da Hive carregadas com sucesso!");
@@ -166,7 +233,7 @@ const HiveUsersPage = () => {
   );
 
   const handleLoadMore = () => {
-    if (posts.length > 0) {
+    if (sortOption !== 'created' && posts.length > 0) { // Only allow load more for 'hot' and 'trending'
       const lastPost = posts[posts.length - 1];
       fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
     }
@@ -189,7 +256,6 @@ const HiveUsersPage = () => {
     });
   };
 
-  // Função ajustada para retornar a contagem de votos
   const getVoteCount = (votes: Array<{ percent: number }>) => {
     return votes.length;
   };
