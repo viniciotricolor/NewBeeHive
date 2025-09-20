@@ -103,7 +103,7 @@ const PostDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 flex items-center justify-center">
         <div className="max-w-3xl mx-auto w-full">
           <Link to="/hive-users">
             <Button variant="outline" className="mb-4 dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
@@ -119,7 +119,7 @@ const PostDetailPage = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4 text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-4">Postagem não encontrada</h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">Não foi possível carregar a postagem.</p>
         <Link to="/hive-users">
@@ -133,7 +133,7 @@ const PostDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <Link to="/hive-users">

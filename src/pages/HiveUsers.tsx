@@ -204,7 +204,7 @@ const HiveUsersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:bg-background p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -329,7 +329,7 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)} {/* Usando getVoteCount */}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
