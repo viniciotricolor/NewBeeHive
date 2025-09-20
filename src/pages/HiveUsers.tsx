@@ -44,7 +44,7 @@ const HiveUsersPage = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null); // Novo estado para o timestamp da última atualização
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const postsPerLoad = 12;
   const navigate = useNavigate();
 
@@ -56,7 +56,7 @@ const HiveUsersPage = () => {
   ) => {
     if (isInitialLoad) {
       setLoading(true);
-      setPosts([]); // Limpa as postagens no carregamento inicial ou atualização
+      setPosts([]);
     } else {
       setLoadingMore(true);
     }
@@ -78,7 +78,7 @@ const HiveUsersPage = () => {
 
       const params: any = {
         tag: 'introduceyourself',
-        limit: postsPerLoad + (isInitialLoad ? 0 : 1) // Busca uma postagem extra para verificar se há mais
+        limit: postsPerLoad + (isInitialLoad ? 0 : 1)
       };
 
       if (!isInitialLoad && lastAuthor && lastPermlink) {
@@ -88,12 +88,11 @@ const HiveUsersPage = () => {
 
       const rawPosts = await discussionMethod(params);
 
-      // Remove a primeira postagem se for uma duplicata do carregamento anterior
       let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
 
       const processedPosts: Post[] = await Promise.all(newRawPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
-        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`; // Fallback padrão
+        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
 
         try {
           const metadata = JSON.parse(post.json_metadata);
@@ -111,7 +110,7 @@ const HiveUsersPage = () => {
 
         return {
           title: post.title,
-          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''), // Trunca o corpo
+          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
           created: post.created,
           permlink: post.permlink,
           author: post.author,
@@ -124,32 +123,31 @@ const HiveUsersPage = () => {
         };
       }));
 
-      // Aplica o filtro de 7 dias SOMENTE para a ordenação 'created'
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(0, 0, 0, 0); // Normaliza para o início do dia
+      sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const filteredByDatePosts = currentSortOption === 'created'
         ? processedPosts.filter(post => {
-            const postDate = new Date(post.created + 'Z'); // Garante interpretação UTC
+            const postDate = new Date(post.created + 'Z');
             return postDate >= sevenDaysAgo;
           })
         : processedPosts;
 
       setPosts(prevPosts => isInitialLoad ? filteredByDatePosts : [...prevPosts, ...filteredByDatePosts]);
-      setHasMore(rawPosts.length > postsPerLoad); // hasMore baseado na resposta bruta da API
+      setHasMore(rawPosts.length > postsPerLoad);
 
       if (isInitialLoad) {
         showSuccess("Postagens da Hive carregadas com sucesso!");
       }
-      setLastUpdated(new Date()); // Atualiza o timestamp no carregamento bem-sucedido
+      setLastUpdated(new Date());
 
     } catch (error: any) {
       console.error("Erro ao buscar postagens da Hive:", error);
       showError(`Falha ao carregar postagens da Hive: ${error.message}.`);
       setPosts([]);
       setHasMore(false);
-      setLastUpdated(null); // Limpa o timestamp em caso de erro
+      setLastUpdated(null);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -180,7 +178,7 @@ const HiveUsersPage = () => {
     fetchHivePosts(true, sortOption);
   };
 
-  const formatDate = (dateInput: string | Date) => { // Modificado para aceitar objeto Date
+  const formatDate = (dateInput: string | Date) => {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -191,13 +189,14 @@ const HiveUsersPage = () => {
     });
   };
 
-  const getVoteWeight = (votes: Array<{ percent: number }>) => {
-    return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;
+  // Função ajustada para retornar a contagem de votos
+  const getVoteCount = (votes: Array<{ percent: number }>) => {
+    return votes.length;
   };
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
-      case 'created': return 'Mais Recentes (7 dias)'; // Rótulo atualizado
+      case 'created': return 'Mais Recentes (7 dias)';
       case 'hot': return 'Mais Comentadas';
       case 'trending': return 'Mais Votadas';
       default: return 'Ordenar por';
@@ -330,7 +329,7 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)} {/* Usando getVoteCount */}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
