@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown, X } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, getDiscussionsByBlog, PostParams } from '@/services/hive';
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {
@@ -101,14 +101,14 @@ const HiveUsersPage = () => {
 
     try {
       const params: PostParams = {
-        limit: 1, // Buscar apenas o primeiro post
-        start_author: username,
+        tag: username, // Usar o username como tag para buscar posts do blog do usuário
+        limit: 1, // Buscar apenas o primeiro post (mais recente)
       };
       
-      const rawPosts = await getDiscussionsByCreated(params);
+      const rawPosts = await getDiscussionsByBlog(params); // Alterado para getDiscussionsByBlog
 
       if (rawPosts && rawPosts.length > 0) {
-        // O primeiro post retornado por getDiscussionsByCreated com limit: 1 e start_author é o mais recente do usuário
+        // O primeiro post retornado por getDiscussionsByBlog com limit: 1 é o mais recente do usuário
         const foundPost = rawPosts[0];
         const processedPost = await processRawPost(foundPost);
         setUserFirstPost(processedPost);
@@ -424,11 +424,13 @@ const HiveUsersPage = () => {
                       <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
                     </div>
                   </div>
-                  <div className="pt-2 mb-4">
-                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                      #introduceyourself
-                    </Badge>
-                  </div>
+                  {!userFirstPost && ( // Conditionally render the badge
+                    <div className="pt-2 mb-4">
+                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+                        #introduceyourself
+                      </Badge>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <Button 
                       className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
