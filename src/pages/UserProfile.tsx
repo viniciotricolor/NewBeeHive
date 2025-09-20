@@ -11,8 +11,6 @@ import { getAccounts, getDiscussionsByBlog, formatReputation } from '@/services/
 import ProfileHeaderSkeleton from '@/components/ProfileHeaderSkeleton';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Badge } from "@/components/ui/badge";
-import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
-import remarkGfm from 'remark-gfm'; // Import remarkGfm
 
 interface Post {
   title: string;
@@ -25,7 +23,6 @@ interface Post {
   active_votes: Array<{ percent: number }>;
   json_metadata: string;
   author_avatar_url?: string;
-  pending_payout_value: string; // Adicionado pending_payout_value
 }
 
 interface UserProfileData {
@@ -85,7 +82,7 @@ const UserProfilePage = () => {
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
-        body: post.body, // Removida a truncagem para ReactMarkdown
+        body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
         created: post.created,
         permlink: post.permlink,
         author: post.author,
@@ -94,7 +91,6 @@ const UserProfilePage = () => {
         active_votes: post.active_votes,
         json_metadata: post.json_metadata,
         author_avatar_url: avatarUrl,
-        pending_payout_value: post.pending_payout_value, // Adicionado
       }));
 
       setProfile({
@@ -268,25 +264,13 @@ const UserProfilePage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose dark:prose-invert max-w-none text-card-foreground mb-4"> {/* Adicionado prose para estilos de markdown */}
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
-                      }}
-                    >
-                      {post.body} {/* Removida a truncagem aqui */}
-                    </ReactMarkdown>
-                  </div>
+                  <p className="text-card-foreground mb-4">{post.body}</p>
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                     <div className="flex items-center">
                       <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
                       <ThumbsUp className="h-4 w-4 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
-                    </div>
-                    <div className="flex items-center">
-                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span> {/* Exibindo payout */}
                     </div>
                   </div>
                   <Button 
