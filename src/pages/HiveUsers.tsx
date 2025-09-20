@@ -51,8 +51,8 @@ const HiveUsersPage = () => {
   const postsPerLoad = 12;
   const navigate = useNavigate();
 
-  const [userIntroPost, setUserIntroPost] = useState<Post | null>(null);
-  const [loadingUserIntroPost, setLoadingUserIntroPost] = useState(false);
+  const [userFirstPost, setUserFirstPost] = useState<Post | null>(null);
+  const [loadingUserFirstPost, setLoadingUserFirstPost] = useState(false);
 
   const processRawPost = useCallback(async (post: any): Promise<Post> => {
     let authorDisplayName = post.author;
@@ -88,43 +88,39 @@ const HiveUsersPage = () => {
     };
   }, []);
 
-  const fetchUserIntroPost = useCallback(async (username: string) => {
+  const fetchUserFirstPost = useCallback(async (username: string) => {
     if (!username) {
-      setUserIntroPost(null);
+      setUserFirstPost(null);
       return;
     }
 
-    setLoadingUserIntroPost(true);
-    setUserIntroPost(null);
+    setLoadingUserFirstPost(true);
+    setUserFirstPost(null);
     setPosts([]);
     setHasMore(false);
 
     try {
       const params: PostParams = {
-        tag: 'introduceyourself',
-        limit: 1,
+        limit: 1, // Buscar apenas o primeiro post
         start_author: username,
       };
       
       const rawPosts = await getDiscussionsByCreated(params);
 
       if (rawPosts && rawPosts.length > 0) {
-        const foundPost = rawPosts.find((p: any) => p.author === username && p.permlink.includes('introduceyourself'));
-        if (foundPost) {
-          const processedPost = await processRawPost(foundPost);
-          setUserIntroPost(processedPost);
-          showSuccess(`Post de introdução de @${username} encontrado!`);
-        } else {
-          showError(`Nenhum post de introdução encontrado para @${username}.`);
-        }
+        // O primeiro post retornado por getDiscussionsByCreated com limit: 1 e start_author é o mais recente do usuário
+        const foundPost = rawPosts[0];
+        const processedPost = await processRawPost(foundPost);
+        setUserFirstPost(processedPost);
+        showSuccess(`Primeiro post de @${username} encontrado!`);
       } else {
-        showError(`Nenhum post de introdução encontrado para @${username}.`);
+        showError(`Nenhum post encontrado para @${username}.`);
       }
     } catch (error: any) {
-      console.error("Erro ao buscar post de introdução do usuário:", error);
-      showError(`Falha ao buscar post de introdução: ${error.message}.`);
+      console.error("Erro ao buscar primeiro post do usuário:", error);
+      showError(`Falha ao buscar primeiro post: ${error.message}.`);
     } finally {
-      setLoadingUserIntroPost(false);
+      setLoadingUserFirstPost(false);
     }
   }, [processRawPost]);
 
@@ -134,7 +130,7 @@ const HiveUsersPage = () => {
     startAuthor: string = '',
     startPermlink: string = ''
   ) => {
-    if (userIntroPost || loadingUserIntroPost || usernameSearchTerm.trim()) {
+    if (userFirstPost || loadingUserFirstPost || usernameSearchTerm.trim()) {
       return;
     }
 
@@ -148,7 +144,7 @@ const HiveUsersPage = () => {
 
     try {
       let discussionMethod;
-      const tagToUse = 'introduceyourself'; // Always use 'introduceyourself' tag
+      const tagToUse = 'introduceyourself'; // A listagem principal ainda é para posts de introdução
 
       switch (currentSortOption) {
         case 'hot':
@@ -201,19 +197,19 @@ const HiveUsersPage = () => {
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption, userIntroPost, loadingUserIntroPost, usernameSearchTerm, processRawPost, postsPerLoad]);
+  }, [sortOption, userFirstPost, loadingUserFirstPost, usernameSearchTerm, processRawPost, postsPerLoad]);
 
   useEffect(() => {
-    if (!usernameSearchTerm.trim() && !userIntroPost && !loadingUserIntroPost) {
+    if (!usernameSearchTerm.trim() && !userFirstPost && !loadingUserFirstPost) {
       fetchHivePosts(true, sortOption);
     }
-  }, [sortOption, usernameSearchTerm, userIntroPost, loadingUserIntroPost, fetchHivePosts]);
+  }, [sortOption, usernameSearchTerm, userFirstPost, loadingUserFirstPost, fetchHivePosts]);
 
   const handleSearchClick = () => {
     if (usernameSearchTerm.trim()) {
-      fetchUserIntroPost(usernameSearchTerm.trim());
+      fetchUserFirstPost(usernameSearchTerm.trim());
     } else {
-      setUserIntroPost(null);
+      setUserFirstPost(null);
       fetchHivePosts(true, sortOption);
     }
   };
@@ -222,7 +218,7 @@ const HiveUsersPage = () => {
     setLoadingRefresh(true);
     showSuccess("Atualizando lista de postagens...");
     if (usernameSearchTerm.trim()) {
-      fetchUserIntroPost(usernameSearchTerm.trim());
+      fetchUserFirstPost(usernameSearchTerm.trim());
     } else {
       fetchHivePosts(true, sortOption);
     }
@@ -255,8 +251,8 @@ const HiveUsersPage = () => {
     }
   };
 
-  const postsToDisplay = userIntroPost ? [userIntroPost] : posts;
-  const isLoadingContent = loadingUserIntroPost || (loading && posts.length === 0);
+  const postsToDisplay = userFirstPost ? [userFirstPost] : posts;
+  const isLoadingContent = loadingUserFirstPost || (loading && posts.length === 0);
   const isEmptyState = postsToDisplay.length === 0 && !isLoadingContent;
 
   return (
@@ -265,12 +261,12 @@ const HiveUsersPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            {userIntroPost ? `Post de Introdução de @${userIntroPost.author}` : 'Explorar Postagens de Introdução na Hive Blockchain'}
+            {userFirstPost ? `Primeiro Post de @${userFirstPost.author}` : 'Explorar Postagens de Introdução na Hive Blockchain'}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
-            {userIntroPost ? 'Este é o post de introdução encontrado para o usuário.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
+            {userFirstPost ? 'Este é o primeiro post encontrado para o usuário.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
           </p>
-          {lastUpdated && !userIntroPost && (
+          {lastUpdated && !userFirstPost && (
             <p className="text-sm text-muted-foreground mb-6">
               Última atualização: {formatDate(lastUpdated)}
             </p>
@@ -282,7 +278,7 @@ const HiveUsersPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Buscar post de introdução por nome de usuário..."
+                placeholder="Buscar primeiro post por nome de usuário..."
                 value={usernameSearchTerm}
                 onChange={(e) => setUsernameSearchTerm(e.target.value)}
                 className="pl-10 pr-10 bg-input border-input text-foreground flex-grow"
@@ -291,7 +287,7 @@ const HiveUsersPage = () => {
                     handleSearchClick();
                   }
                 }}
-                aria-label="Buscar post de introdução por nome de usuário"
+                aria-label="Buscar primeiro post por nome de usuário"
               />
               {usernameSearchTerm.length > 0 && (
                 <Button
@@ -306,11 +302,11 @@ const HiveUsersPage = () => {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              <Button onClick={handleSearchClick} disabled={loadingUserIntroPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-                {loadingUserIntroPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              <Button onClick={handleSearchClick} disabled={loadingUserFirstPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+                {loadingUserFirstPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
             </div>
-            {!userIntroPost && !loadingUserIntroPost && (
+            {!userFirstPost && !loadingUserFirstPost && (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -344,7 +340,7 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Stats - Escondidos se uma busca específica estiver ativa */}
-        {!userIntroPost && !loadingUserIntroPost && (
+        {!userFirstPost && !loadingUserFirstPost && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-card border-border">
               <CardContent className="p-6">
@@ -385,7 +381,7 @@ const HiveUsersPage = () => {
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingContent ? (
-            Array.from({ length: userIntroPost ? 1 : postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
+            Array.from({ length: userFirstPost ? 1 : postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
           ) : (
             postsToDisplay.map((post) => (
               <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
@@ -457,7 +453,7 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Load More Button */}
-        {hasMore && postsToDisplay.length > 0 && !userIntroPost && (
+        {hasMore && postsToDisplay.length > 0 && !userFirstPost && (
           <div className="flex justify-center mt-8">
             <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
@@ -473,10 +469,10 @@ const HiveUsersPage = () => {
             <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
-        {isEmptyState && usernameSearchTerm.trim() && !loadingUserIntroPost && (
+        {isEmptyState && usernameSearchTerm.trim() && !loadingUserFirstPost && (
           <div className="text-center py-12 text-muted-foreground">
             <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum post de introdução encontrado para "{usernameSearchTerm}"</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum post encontrado para "{usernameSearchTerm}"</h3>
             <p className="text-muted-foreground">Verifique o nome de usuário e tente novamente.</p>
           </div>
         )}
