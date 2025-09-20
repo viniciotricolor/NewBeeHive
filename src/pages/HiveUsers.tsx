@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
+import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown, X } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
 import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
@@ -285,13 +285,27 @@ const HiveUsersPage = () => {
                 placeholder="Buscar post de introdução por nome de usuário..."
                 value={usernameSearchTerm}
                 onChange={(e) => setUsernameSearchTerm(e.target.value)}
-                className="pl-10 bg-input border-input text-foreground flex-grow"
+                className="pl-10 pr-10 bg-input border-input text-foreground flex-grow"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSearchClick();
                   }
                 }}
+                aria-label="Buscar post de introdução por nome de usuário"
               />
+              {usernameSearchTerm.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                  onClick={() => {
+                    setUsernameSearchTerm('');
+                  }}
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
               <Button onClick={handleSearchClick} disabled={loadingUserIntroPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                 {loadingUserIntroPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
