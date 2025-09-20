@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, callHiveApi } from '@/services/hive';
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending } from '@/services/hive';
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {
@@ -52,13 +52,13 @@ const HiveUsersPage = () => {
   const fetchHivePosts = useCallback(async (
     isInitialLoad: boolean = true,
     currentSortOption: SortOption = sortOption,
-    lastAuthor: string = '',
-    lastPermlink: string = ''
+    startAuthor: string = '',
+    startPermlink: string = ''
   ) => {
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
-      setHasMore(false); // Assume no more until proven otherwise for 'created'
+      setHasMore(false);
     } else {
       setLoadingMore(true);
     }
@@ -78,7 +78,6 @@ const HiveUsersPage = () => {
           break;
       }
 
-      // Helper to process a single raw post into the Post interface
       const processRawPost = async (post: any): Promise<Post> => {
         let authorDisplayName = post.author;
         let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
@@ -112,18 +111,17 @@ const HiveUsersPage = () => {
         };
       };
 
-      let finalPosts: Post[] = [];
+      let fetchedPosts: Post[] = [];
 
       if (currentSortOption === 'created') {
-        // Recursive helper to fetch all posts for 'created' option within 7 days
-        const fetchAllCreatedPosts = async (
+        const fetchAllCreatedPostsRecursive = async (
           currentAccumulatedPosts: Post[] = [],
           currentStartAuthor: string = '',
           currentStartPermlink: string = ''
         ): Promise<Post[]> => {
-          const params: any = {
+          const params: PostParams = {
             tag: 'introduceyourself',
-            limit: API_BATCH_SIZE + 1 // Fetch one more to check if there are more pages
+            limit: API_BATCH_SIZE + 1, // Fetch one more to check for next page
           };
 
           if (currentStartAuthor && currentStartPermlink) {
@@ -134,7 +132,14 @@ const HiveUsersPage = () => {
           const rawPostsBatch = await discussionMethod(params);
 
           if (!rawPostsBatch || rawPostsBatch.length === 0) {
-            return currentAccumulatedPosts; // No more posts
+            return currentAccumulatedPosts;
+          }
+
+          // If start_author/permlink were provided, the first post is a duplicate of the last one from the previous batch
+          const postsToProcess = (currentStartAuthor && currentStartPermlink) ? rawPostsBatch.slice(1) : rawPostsBatch;
+
+          if (postsToProcess.length === 0) {
+            return currentAccumulatedPosts;
           }
 
           const sevenDaysAgo = new Date();
@@ -142,67 +147,62 @@ const HiveUsersPage = () => {
           sevenDaysAgo.setHours(0, 0, 0, 0);
 
           let postsForThisBatch: Post[] = [];
-          let lastPostInBatch: any | null = null;
+          let lastValidPostInBatch: any | null = null;
           let shouldContinueFetching = false;
 
-          // Process posts from the batch
-          for (let i = 0; i < rawPostsBatch.length; i++) {
-            const post = rawPostsBatch[i];
+          for (const post of postsToProcess) {
             const postDate = new Date(post.created + 'Z');
-
             if (postDate >= sevenDaysAgo) {
-              // Only add if within 7 days
               postsForThisBatch.push(await processRawPost(post));
+              lastValidPostInBatch = post; // Keep track of the last valid post for the next recursive call
             } else {
-              // If we hit a post older than 7 days, stop processing this batch and don't fetch more
+              // If we hit a post older than 7 days, stop processing and don't fetch more
               shouldContinueFetching = false;
               break;
-            }
-
-            if (i === rawPostsBatch.length - 1) {
-              lastPostInBatch = post;
             }
           }
 
           const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
 
-          // Determine if we need to fetch more
-          // Continue if we fetched a full batch (API_BATCH_SIZE + 1) and the last post was still within 7 days
-          if (rawPostsBatch.length === API_BATCH_SIZE + 1 && lastPostInBatch && new Date(lastPostInBatch.created + 'Z') >= sevenDaysAgo) {
+          // Continue fetching if we got a full batch (meaning there might be more)
+          // AND the last post processed was still within the 7-day limit.
+          if (postsToProcess.length === API_BATCH_SIZE && lastValidPostInBatch) {
             shouldContinueFetching = true;
           } else {
             shouldContinueFetching = false;
           }
 
-          if (shouldContinueFetching && lastPostInBatch) {
-            return fetchAllCreatedPosts(newAccumulatedPosts, lastPostInBatch.author, lastPostInBatch.permlink);
+          if (shouldContinueFetching && lastValidPostInBatch) {
+            return fetchAllCreatedPostsRecursive(newAccumulatedPosts, lastValidPostInBatch.author, lastValidPostInBatch.permlink);
           } else {
             return newAccumulatedPosts;
           }
         };
 
-        finalPosts = await fetchAllCreatedPosts();
-        setHasMore(false); // All available posts within 7 days are fetched, so no more to load
+        fetchedPosts = await fetchAllCreatedPostsRecursive();
+        setHasMore(false); // For 'created', we fetch all within 7 days, so no more to load via button
       } else {
-        // Existing logic for 'hot' and 'trending' with pagination
-        const params: any = {
+        // Logic for 'hot' and 'trending' with pagination
+        const params: PostParams = {
           tag: 'introduceyourself',
-          limit: postsPerLoad + (isInitialLoad ? 0 : 1)
+          limit: postsPerLoad + 1 // Fetch one more to check if there are more pages
         };
 
-        if (!isInitialLoad && lastAuthor && lastPermlink) {
-          params.start_author = lastAuthor;
-          params.start_permlink = lastPermlink;
+        if (startAuthor && startPermlink) {
+          params.start_author = startAuthor;
+          params.start_permlink = startPermlink;
         }
 
         const rawPosts = await discussionMethod(params);
-        let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
+        
+        // If start_author/permlink were provided, the first post is a duplicate
+        const postsToProcess = (startAuthor && startPermlink) ? rawPosts.slice(1) : rawPosts;
 
-        finalPosts = await Promise.all(newRawPosts.map(processRawPost));
-        setHasMore(rawPosts.length > postsPerLoad);
+        fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
+        setHasMore(rawPosts.length > postsPerLoad); // Check if the original rawPosts had more than 'postsPerLoad'
       }
 
-      setPosts(prevPosts => isInitialLoad ? finalPosts : [...prevPosts, ...finalPosts]);
+      setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
 
       if (isInitialLoad) {
         showSuccess("Postagens da Hive carregadas com sucesso!");
@@ -256,8 +256,8 @@ const HiveUsersPage = () => {
     });
   };
 
-  const getVoteCount = (votes: Array<{ percent: number }>) => {
-    return votes.length;
+  const getVoteWeight = (votes: Array<{ percent: number }>) => {
+    return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;
   };
 
   const getSortOptionLabel = (option: SortOption) => {
@@ -395,7 +395,7 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
