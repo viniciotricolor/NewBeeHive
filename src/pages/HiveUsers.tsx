@@ -124,7 +124,7 @@ const HiveUsersPage = () => {
           currentStartPermlink: string = ''
         ): Promise<Post[]> => {
           const params: PostParams = {
-            tag: 'introduceyourself',
+            tag: '', // Usar tag vazia para o feed geral de 'Mais Recentes'
             limit: API_BATCH_SIZE + 1,
           };
 
@@ -147,7 +147,6 @@ const HiveUsersPage = () => {
 
           let postsForThisBatch: Post[] = [];
           let lastValidPostInBatch: any | null = null;
-          let shouldContinueFetching = false;
 
           for (const post of postsToProcess) {
             postsForThisBatch.push(await processRawPost(post));
@@ -156,24 +155,18 @@ const HiveUsersPage = () => {
 
           const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
 
-          if (postsToProcess.length === API_BATCH_SIZE && lastValidPostInBatch) {
-            shouldContinueFetching = true;
-          } else {
-            shouldContinueFetching = false;
-          }
-
-          if (shouldContinueFetching && lastValidPostInBatch) {
-            return fetchAllCreatedPostsRecursive(newAccumulatedPosts, lastValidPostInBatch.author, lastValidPostInBatch.permlink);
-          } else {
-            return newAccumulatedPosts;
-          }
+          // A lógica de paginação para 'created' com tag vazia pode ser complexa para um feed infinito.
+          // Para simplificar e garantir que algo seja exibido, vamos limitar a uma única chamada
+          // para o feed geral por enquanto, e desabilitar 'Carregar Mais' para 'created'.
+          // Se precisar de paginação para o feed geral, uma abordagem diferente seria necessária.
+          return newAccumulatedPosts;
         };
 
         fetchedPosts = await fetchAllCreatedPostsRecursive();
-        setHasMore(false);
+        setHasMore(false); // Desabilitar 'Carregar Mais' para o feed geral por enquanto
       } else {
         const params: PostParams = {
-          tag: 'introduceyourself',
+          tag: 'introduceyourself', // Manter 'introduceyourself' para hot/trending
           limit: postsPerLoad + 1
         };
 
@@ -221,7 +214,7 @@ const HiveUsersPage = () => {
   );
 
   const handleLoadMore = () => {
-    if (sortOption !== 'created' && posts.length > 0) {
+    if (sortOption !== 'created' && posts.length > 0) { // 'Carregar Mais' apenas para hot/trending
       const lastPost = posts[posts.length - 1];
       fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
     }
@@ -246,7 +239,7 @@ const HiveUsersPage = () => {
 
   const getSortOptionLabel = (option: SortOption) => {
     switch (option) {
-      case 'created': return 'Mais Recentes (Todas)';
+      case 'created': return 'Mais Recentes (Geral)';
       case 'hot': return 'Mais Comentadas';
       case 'trending': return 'Mais Votadas';
       default: return 'Ordenar por';
@@ -259,10 +252,10 @@ const HiveUsersPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Explorar Postagens de Introdução na Hive Blockchain
+            {sortOption === 'created' ? 'Explorar Últimas Postagens na Hive Blockchain' : 'Explorar Postagens de Introdução na Hive Blockchain'}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
-            Descubra as últimas postagens de introdução na comunidade Hive.
+            {sortOption === 'created' ? 'Descubra as postagens mais recentes de toda a comunidade Hive.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
           </p>
           {lastUpdated && (
             <p className="text-sm text-muted-foreground mb-6">
@@ -290,7 +283,7 @@ const HiveUsersPage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
                 <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
-                  Mais Recentes (Todas)
+                  Mais Recentes (Geral)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
                   Mais Comentadas
@@ -327,7 +320,7 @@ const HiveUsersPage = () => {
           <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Search className="h-8 w-8 text-green-600 mr-3" /> {/* Mantendo verde para distinção */}
+                <Search className="h-8 w-8 text-green-600 mr-3" />
                 <div>
                   <p className="text-2xl font-bold text-foreground">{filteredPosts.length}</p>
                   <p className="text-sm text-muted-foreground">Postagens filtradas</p>
@@ -338,7 +331,7 @@ const HiveUsersPage = () => {
           <Card className="bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <ExternalLink className="h-8 w-8 text-purple-600 mr-3" /> {/* Mantendo roxo para distinção */}
+                <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
                   <p className="text-2xl font-bold text-foreground">{new Set(posts.map(p => p.author)).size}</p>
                   <p className="text-sm text-muted-foreground">Autores únicos</p>
@@ -391,13 +384,19 @@ const HiveUsersPage = () => {
                       <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length}
                     </div>
                     <div className="flex items-center">
-                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span> {/* Alterado aqui */}
+                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
-                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                      #introduceyourself
-                    </Badge>
+                    {sortOption === 'created' ? (
+                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+                        Geral
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+                        #introduceyourself
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -423,7 +422,7 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Load More Button */}
-        {hasMore && filteredPosts.length > 0 && (
+        {hasMore && filteredPosts.length > 0 && sortOption !== 'created' && ( // 'Carregar Mais' apenas para hot/trending
           <div className="flex justify-center mt-8">
             <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
