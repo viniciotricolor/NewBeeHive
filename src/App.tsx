@@ -9,8 +9,9 @@ import HiveUsers from "./pages/HiveUsers";
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
-import AboutPage from "./pages/About"; // Import the new About page
-import Footer from "./components/Footer"; // Import the new Footer component
+import AboutPage from "./pages/About";
+import Footer from "./components/Footer";
+import { Analytics } from "@vercel/analytics/react"; // Importando Analytics para React
 
 const queryClient = new QueryClient();
 
@@ -21,22 +22,23 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="relative min-h-screen flex flex-col"> {/* Added flex-col for footer at bottom */}
+          <div className="relative min-h-screen flex flex-col">
             <div className="absolute top-4 right-4 z-10">
               <ThemeToggle />
             </div>
-            <div className="flex-grow"> {/* Content wrapper to push footer down */}
+            <div className="flex-grow">
               <Routes>
                 <Route path="/" element={<HiveUsers />} />
                 <Route path="/hive-users" element={<HiveUsers />} />
                 <Route path="/users/:username" element={<UserProfile />} />
                 <Route path="/post/:author/:permlink" element={<PostDetail />} />
-                <Route path="/about" element={<AboutPage />} /> {/* New route for About page */}
+                <Route path="/about" element={<AboutPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
-            <Footer /> {/* Add Footer component */}
+            <Footer />
+            <Analytics /> {/* Adicionando o componente Analytics aqui */}
           </div>
         </BrowserRouter>
       </TooltipProvider>
