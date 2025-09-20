@@ -3,9 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  /* Tema Claro (Padrão) */
   :root {
-    --background: 210 36% 98%; /* Um cinza/off-white muito claro para o tema claro */
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 100%; /* Branco puro */
+    --foreground: 222.2 84% 4.9%; /* Quase preto */
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -13,10 +14,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 222.2 47.4% 11.2%; /* Azul escuro */
+    --primary-foreground: 210 40% 98%; /* Off-white */
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 210 40% 96.1%; /* Cinza claro */
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
@@ -25,7 +26,7 @@
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 60.2%; /* Vermelho */
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
@@ -34,28 +35,29 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 36% 98%; /* Combina com o fundo principal */
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.2 84% 4.9%;
   }
 
+  /* Tema Escuro */
   .dark {
-    --background: 222.2 84% 4.9%; /* Um cinza azulado muito escuro, mais suave que preto puro */
+    --background: 222.2 84% 4.9%; /* Um cinza azulado muito escuro */
     --foreground: 210 40% 98%; /* Off-white */
 
-    --card: 222.2 84% 4.9%; /* Combina com o fundo */
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%; /* Combina com o fundo */
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%; /* Off-white para elementos primários */
-    --primary-foreground: 222.2 47.4% 11.2%; /* Texto escuro no primário */
+    --primary: 210 40% 98%; /* Off-white */
+    --primary-foreground: 222.2 47.4% 11.2%; /* Azul escuro */
 
     --secondary: 217.2 32.6% 17.5%; /* Cinza escuro */
     --secondary-foreground: 210 40% 98%;
@@ -66,16 +68,16 @@
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%; /* Mantém o vermelho para destrutivo */
+    --destructive: 0 62.8% 30.6%; /* Vermelho escuro */
     --destructive-foreground: 0 0% 100%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 210 40% 98%; /* Anel off-white */
+    --ring: 210 40% 98%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 222.2 84% 4.9%; /* Combina com o fundo principal */
+    --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 40% 98%;
     --sidebar-primary-foreground: 222.2 47.4% 11.2%;
@@ -85,6 +87,7 @@
     --sidebar-ring: 210 40% 98%;
   }
 
+  /* Tema Hive (Cores específicas do usuário) */
   :root[data-theme="hive"] {
     --background: 222.2 84% 4.9%; /* Dark background */
     --foreground: 210 40% 98%; /* Light text */
