@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface HiveUser {
   username: string;
@@ -16,7 +17,7 @@ interface HiveUser {
   post_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
   follower_count: number; // Mantido simulado por enquanto, pois requer outra chamada de API
   last_post_date: string;
-  post_url: string;
+  post_url: string; // This will now be the introduction post URL
 }
 
 const HiveUsersPage = () => {
@@ -25,6 +26,7 @@ const HiveUsersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 12;
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const fetchHiveUsers = useCallback(async () => {
     setLoading(true);
@@ -247,10 +249,10 @@ const HiveUsersPage = () => {
                   </div>
                   <Button 
                     className="w-full mt-4" 
-                    onClick={() => window.open(user.post_url, '_blank')}
+                    onClick={() => navigate(`/users/${user.username}`)} // Navigate to UserProfile page
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Ver Post
+                    Ver Posts do Usuário
                   </Button>
                 </div>
               </CardContent>
