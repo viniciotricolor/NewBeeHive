@@ -10,6 +10,8 @@ import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsU
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate } from 'react-router-dom';
 
+const HIVE_API_NODE = 'https://api.deathwing.me'; // Novo nó da API da Hive
+
 interface Post {
   title: string;
   body: string;
@@ -35,7 +37,7 @@ const HiveUsersPage = () => {
   const fetchHivePosts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('https://api.hive.blog', {
+      const response = await fetch(HIVE_API_NODE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

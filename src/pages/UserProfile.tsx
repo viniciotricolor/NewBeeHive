@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, ExternalLink, Calendar, MessageSquare, ThumbsUp } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 
+const HIVE_API_NODE = 'https://api.deathwing.me'; // Novo nó da API da Hive
+
 interface Post {
   title: string;
   body: string;
@@ -39,7 +41,7 @@ const UserProfilePage = () => {
     setLoading(true);
     try {
       // Fetch user account details for display name and avatar
-      const accountResponse = await fetch('https://api.hive.blog', {
+      const accountResponse = await fetch(HIVE_API_NODE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +75,7 @@ const UserProfilePage = () => {
       }
 
       // Fetch user's blog posts
-      const postsResponse = await fetch('https://api.hive.blog', {
+      const postsResponse = await fetch(HIVE_API_NODE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
