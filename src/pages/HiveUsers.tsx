@@ -102,15 +102,17 @@ const HiveUsersPage = () => {
     try {
       const params: PostParams = {
         tag: username, // Usar o username como tag para buscar posts do blog do usuário
-        limit: 1, // Buscar apenas o primeiro post (mais recente)
+        limit: 100, // Buscar até 100 posts para encontrar o mais antigo
       };
       
-      const rawPosts = await getDiscussionsByBlog(params); // Alterado para getDiscussionsByBlog
+      const rawPosts = await getDiscussionsByBlog(params);
 
       if (rawPosts && rawPosts.length > 0) {
-        // O primeiro post retornado por getDiscussionsByBlog com limit: 1 é o mais recente do usuário
-        const foundPost = rawPosts[0];
-        const processedPost = await processRawPost(foundPost);
+        // Ordenar posts pela data de criação em ordem ascendente para encontrar o mais antigo
+        const sortedPosts = [...rawPosts].sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+        const firstPost = sortedPosts[0]; // Este será o post mais antigo entre os posts buscados
+        
+        const processedPost = await processRawPost(firstPost);
         setUserFirstPost(processedPost);
         showSuccess(`Primeiro post de @${username} encontrado!`);
       } else {
