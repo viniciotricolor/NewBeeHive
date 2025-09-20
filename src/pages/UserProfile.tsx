@@ -10,6 +10,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { getAccounts, getDiscussionsByBlog, formatReputation } from '@/services/hive';
 import ProfileHeaderSkeleton from '@/components/ProfileHeaderSkeleton';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
+import { Badge } from "@/components/ui/badge"; // Importação adicionada
 
 interface Post {
   title: string;
