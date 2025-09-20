@@ -43,8 +43,8 @@ const HiveUsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const [usernameSearchTerm, setUsernameSearchTerm] = useState(''); // Termo de busca para nome de usuário
+  const debouncedUsernameSearchTerm = useDebounce(usernameSearchTerm, 500); // Debounce para o termo de busca
   const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -52,12 +52,100 @@ const HiveUsersPage = () => {
   const API_BATCH_SIZE = 100;
   const navigate = useNavigate();
 
+  // Novo estado para o post de introdução de um usuário específico
+  const [userIntroPost, setUserIntroPost] = useState<Post | null>(null);
+  const [loadingUserIntroPost, setLoadingUserIntroPost] = useState(false);
+
+  // Função auxiliar para processar um post bruto da API
+  const processRawPost = useCallback(async (post: any): Promise<Post> => {
+    let authorDisplayName = post.author;
+    let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
+
+    try {
+      const metadata = JSON.parse(post.json_metadata);
+      if (metadata && metadata.profile) {
+        if (metadata.profile.name) {
+          authorDisplayName = metadata.profile.name;
+        }
+        if (metadata.profile.profile_image) {
+          authorAvatarUrl = metadata.profile.profile_image;
+        }
+      }
+    } catch (e) {
+      // Metadados podem estar malformados ou ausentes, fallback já definido
+    }
+
+    return {
+      title: post.title,
+      body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
+      created: post.created,
+      permlink: post.permlink,
+      author: post.author,
+      url: `https://hive.blog/@${post.author}/${post.permlink}`,
+      replies: post.children,
+      active_votes: post.active_votes,
+      json_metadata: post.json_metadata,
+      author_display_name: authorDisplayName,
+      author_avatar_url: authorAvatarUrl,
+      pending_payout_value: post.pending_payout_value,
+    };
+  }, []);
+
+  // Função para buscar o post de introdução de um usuário específico
+  const fetchUserIntroPost = useCallback(async (username: string) => {
+    if (!username) {
+      setUserIntroPost(null);
+      return;
+    }
+
+    setLoadingUserIntroPost(true);
+    setUserIntroPost(null); // Limpa o resultado anterior
+    setPosts([]); // Limpa o feed geral ao buscar um usuário específico
+    setHasMore(false); // Não há mais para carregar para uma busca única
+
+    try {
+      const params: PostParams = {
+        tag: 'introduceyourself',
+        limit: 1, // Esperamos apenas um post de introdução
+        start_author: username,
+      };
+      
+      // Usamos getDiscussionsByCreated para buscar posts por autor e tag
+      const rawPosts = await getDiscussionsByCreated(params);
+
+      if (rawPosts && rawPosts.length > 0) {
+        // Filtra para garantir que é o post de introdução do autor correto
+        const foundPost = rawPosts.find((p: any) => p.author === username && p.permlink.includes('introduceyourself'));
+        if (foundPost) {
+          const processedPost = await processRawPost(foundPost);
+          setUserIntroPost(processedPost);
+          showSuccess(`Post de introdução de @${username} encontrado!`);
+        } else {
+          showError(`Nenhum post de introdução encontrado para @${username}.`);
+        }
+      } else {
+        showError(`Nenhum post de introdução encontrado para @${username}.`);
+      }
+    } catch (error: any) {
+      console.error("Erro ao buscar post de introdução do usuário:", error);
+      showError(`Falha ao buscar post de introdução: ${error.message}.`);
+    } finally {
+      setLoadingUserIntroPost(false);
+    }
+  }, [processRawPost]);
+
+  // Função para buscar posts do feed geral ou de introdução (hot/trending)
   const fetchHivePosts = useCallback(async (
     isInitialLoad: boolean = true,
     currentSortOption: SortOption = sortOption,
     startAuthor: string = '',
     startPermlink: string = ''
   ) => {
+    // Não busca posts gerais se uma busca específica de usuário estiver ativa
+    if (userIntroPost || loadingUserIntroPost || usernameSearchTerm.trim()) {
+      return;
+    }
+
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
@@ -81,41 +169,8 @@ const HiveUsersPage = () => {
           break;
       }
 
-      const processRawPost = async (post: any): Promise<Post> => {
-        let authorDisplayName = post.author;
-        let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
-
-        try {
-          const metadata = JSON.parse(post.json_metadata);
-          if (metadata && metadata.profile) {
-            if (metadata.profile.name) {
-              authorDisplayName = metadata.profile.name;
-            }
-            if (metadata.profile.profile_image) {
-              authorAvatarUrl = metadata.profile.profile_image;
-            }
-          }
-        } catch (e) {
-          // Metadados podem estar malformados ou ausentes, fallback já definido
-        }
-
-        return {
-          title: post.title,
-          body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
-          created: post.created,
-          permlink: post.permlink,
-          author: post.author,
-          url: `https://hive.blog/@${post.author}/${post.permlink}`,
-          replies: post.children,
-          active_votes: post.active_votes,
-          json_metadata: post.json_metadata,
-          author_display_name: authorDisplayName,
-          author_avatar_url: authorAvatarUrl,
-          pending_payout_value: post.pending_payout_value,
-        };
-      };
-
       let fetchedPosts: Post[] = [];
+      const tagToUse = currentSortOption === 'created' ? '' : 'introduceyourself'; // Tag vazia para feed geral
 
       if (currentSortOption === 'created') {
         const fetchAllCreatedPostsRecursive = async (
@@ -124,7 +179,7 @@ const HiveUsersPage = () => {
           currentStartPermlink: string = ''
         ): Promise<Post[]> => {
           const params: PostParams = {
-            tag: '', // Usar tag vazia para o feed geral de 'Mais Recentes'
+            tag: tagToUse,
             limit: API_BATCH_SIZE + 1,
           };
 
@@ -154,11 +209,6 @@ const HiveUsersPage = () => {
           }
 
           const newAccumulatedPosts = [...currentAccumulatedPosts, ...postsForThisBatch];
-
-          // A lógica de paginação para 'created' com tag vazia pode ser complexa para um feed infinito.
-          // Para simplificar e garantir que algo seja exibido, vamos limitar a uma única chamada
-          // para o feed geral por enquanto, e desabilitar 'Carregar Mais' para 'created'.
-          // Se precisar de paginação para o feed geral, uma abordagem diferente seria necessária.
           return newAccumulatedPosts;
         };
 
@@ -166,7 +216,7 @@ const HiveUsersPage = () => {
         setHasMore(false); // Desabilitar 'Carregar Mais' para o feed geral por enquanto
       } else {
         const params: PostParams = {
-          tag: 'introduceyourself', // Manter 'introduceyourself' para hot/trending
+          tag: tagToUse,
           limit: postsPerLoad + 1
         };
 
@@ -201,29 +251,39 @@ const HiveUsersPage = () => {
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption]);
+  }, [sortOption, userIntroPost, loadingUserIntroPost, usernameSearchTerm, processRawPost]);
 
   useEffect(() => {
-    fetchHivePosts(true, sortOption);
-  }, [sortOption, fetchHivePosts]);
+    // Só busca posts gerais se não houver uma busca específica de usuário ativa
+    if (!usernameSearchTerm.trim() && !userIntroPost && !loadingUserIntroPost) {
+      fetchHivePosts(true, sortOption);
+    }
+  }, [sortOption, usernameSearchTerm, userIntroPost, loadingUserIntroPost, fetchHivePosts]);
 
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-    post.author.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-    (post.author_display_name && post.author_display_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
-  );
+  // A função filteredPosts não é mais necessária para a busca principal,
+  // pois estamos lidando com a busca específica e o feed geral separadamente.
+  // No entanto, se o usuário estiver no feed geral e digitar algo no campo de busca,
+  // ele ainda pode querer filtrar os posts *já carregados*.
+  // Para a nova funcionalidade, o campo de busca aciona uma nova API.
+  // Vou remover a filtragem client-side para simplificar, já que a busca agora é via API.
 
-  const handleLoadMore = () => {
-    if (sortOption !== 'created' && posts.length > 0) { // 'Carregar Mais' apenas para hot/trending
-      const lastPost = posts[posts.length - 1];
-      fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
+  const handleSearchClick = () => {
+    if (usernameSearchTerm.trim()) {
+      fetchUserIntroPost(usernameSearchTerm.trim());
+    } else {
+      setUserIntroPost(null); // Limpa a busca específica se o input estiver vazio
+      fetchHivePosts(true, sortOption); // Volta para o feed geral
     }
   };
 
   const handleRefresh = () => {
     setLoadingRefresh(true);
     showSuccess("Atualizando lista de postagens...");
-    fetchHivePosts(true, sortOption);
+    if (usernameSearchTerm.trim()) {
+      fetchUserIntroPost(usernameSearchTerm.trim());
+    } else {
+      fetchHivePosts(true, sortOption);
+    }
   };
 
   const formatDate = (dateInput: string | Date) => {
@@ -246,18 +306,23 @@ const HiveUsersPage = () => {
     }
   };
 
+  // Determina qual lista de posts exibir
+  const postsToDisplay = userIntroPost ? [userIntroPost] : posts;
+  const isLoadingContent = loadingUserIntroPost || (loading && posts.length === 0);
+  const isEmptyState = postsToDisplay.length === 0 && !isLoadingContent;
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            {sortOption === 'created' ? 'Explorar Últimas Postagens na Hive Blockchain' : 'Explorar Postagens de Introdução na Hive Blockchain'}
+            {userIntroPost ? `Post de Introdução de @${userIntroPost.author}` : (sortOption === 'created' ? 'Explorar Últimas Postagens na Hive Blockchain' : 'Explorar Postagens de Introdução na Hive Blockchain')}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
-            {sortOption === 'created' ? 'Descubra as postagens mais recentes de toda a comunidade Hive.' : 'Descubra as últimas postagens de introdução na comunidade Hive.'}
+            {userIntroPost ? 'Este é o post de introdução encontrado para o usuário.' : (sortOption === 'created' ? 'Descubra as postagens mais recentes de toda a comunidade Hive.' : 'Descubra as últimas postagens de introdução na comunidade Hive.')}
           </p>
-          {lastUpdated && (
+          {lastUpdated && !userIntroPost && ( // Só mostra a última atualização para o feed geral
             <p className="text-sm text-muted-foreground mb-6">
               Última atualização: {formatDate(lastUpdated)}
             </p>
@@ -265,88 +330,103 @@ const HiveUsersPage = () => {
           
           {/* Search and Controls */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <div className="relative w-full sm:w-96">
+            <div className="relative w-full sm:w-96 flex">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Buscar por título ou autor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-input border-input text-foreground"
+                placeholder="Buscar post de introdução por nome de usuário..."
+                value={usernameSearchTerm}
+                onChange={(e) => setUsernameSearchTerm(e.target.value)}
+                className="pl-10 bg-input border-input text-foreground flex-grow"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchClick();
+                  }
+                }}
               />
+              <Button onClick={handleSearchClick} disabled={loadingUserIntroPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+                {loadingUserIntroPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              </Button>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 bg-card text-card-foreground border-border">
-                  {getSortOptionLabel(sortOption)} <ChevronDown className="ml-2 h-4 w-4" />
+            {/* DropdownMenu e Botão Atualizar são desabilitados se uma busca específica estiver ativa */}
+            {!userIntroPost && !loadingUserIntroPost && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 bg-card text-card-foreground border-border">
+                      {getSortOptionLabel(sortOption)} <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
+                    <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
+                      Mais Recentes (Geral)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
+                      Mais Comentadas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('trending')} className="hover:bg-accent hover:text-accent-foreground">
+                      Mais Votadas
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {loadingRefresh ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Atualizar
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-                <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
-                  Mais Recentes (Geral)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
-                  Mais Comentadas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption('trending')} className="hover:bg-accent hover:text-accent-foreground">
-                  Mais Votadas
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-              {loadingRefresh ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Atualizar
-            </Button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <User className="h-8 w-8 text-primary mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{posts.length}</p>
-                  <p className="text-sm text-muted-foreground">Postagens carregadas</p>
+        {/* Stats - Escondidos se uma busca específica estiver ativa */}
+        {!userIntroPost && !loadingUserIntroPost && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-card border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <User className="h-8 w-8 text-primary mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{postsToDisplay.length}</p>
+                    <p className="text-sm text-muted-foreground">Postagens carregadas</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Search className="h-8 w-8 text-green-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{filteredPosts.length}</p>
-                  <p className="text-sm text-muted-foreground">Postagens filtradas</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Search className="h-8 w-8 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{postsToDisplay.length}</p>
+                    <p className="text-sm text-muted-foreground">Postagens filtradas</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{new Set(posts.map(p => p.author)).size}</p>
-                  <p className="text-sm text-muted-foreground">Autores únicos</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{new Set(postsToDisplay.map(p => p.author)).size}</p>
+                    <p className="text-sm text-muted-foreground">Autores únicos</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading && posts.length === 0 ? (
-            Array.from({ length: postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
+          {isLoadingContent ? (
+            Array.from({ length: userIntroPost ? 1 : postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
           ) : (
-            filteredPosts.map((post) => (
+            postsToDisplay.map((post) => (
               <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-4">
@@ -388,9 +468,9 @@ const HiveUsersPage = () => {
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
-                    {sortOption === 'created' ? (
+                    {userIntroPost || sortOption === 'created' ? (
                       <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                        Geral
+                        {userIntroPost ? '#introduceyourself' : 'Geral'}
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
@@ -422,7 +502,7 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Load More Button */}
-        {hasMore && filteredPosts.length > 0 && sortOption !== 'created' && ( // 'Carregar Mais' apenas para hot/trending
+        {hasMore && postsToDisplay.length > 0 && sortOption !== 'created' && !userIntroPost && (
           <div className="flex justify-center mt-8">
             <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
@@ -431,11 +511,18 @@ const HiveUsersPage = () => {
         )}
 
         {/* Empty State */}
-        {filteredPosts.length === 0 && !loading && (
+        {isEmptyState && !usernameSearchTerm.trim() && ( // Estado vazio para o feed geral
           <div className="text-center py-12 text-muted-foreground">
             <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem encontrada</h3>
             <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
+          </div>
+        )}
+        {isEmptyState && usernameSearchTerm.trim() && !loadingUserIntroPost && ( // Estado vazio para busca específica
+          <div className="text-center py-12 text-muted-foreground">
+            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum post de introdução encontrado para "{usernameSearchTerm}"</h3>
+            <p className="text-muted-foreground">Verifique o nome de usuário e tente novamente.</p>
           </div>
         )}
       </div>
