@@ -6,11 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp } from "lucide-react";
+import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { useNavigate } from 'react-router-dom';
-
-const HIVE_API_NODE = 'https://api.deathwing.me'; // Novo nó da API da Hive
+import { useNavigate, Link } from 'react-router-dom';
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, callHiveApi } from '@/services/hive';
+import { useDebounce } from '@/hooks/use-debounce';
+import PostCardSkeleton from '@/components/PostCardSkeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Post {
   title: string;
@@ -22,48 +29,68 @@ interface Post {
   replies: number;
   active_votes: Array<{ percent: number }>;
   json_metadata: string;
-  author_display_name?: string; // Optional, will try to fetch from metadata
-  author_avatar_url?: string; // Optional, will try to fetch from metadata
+  author_display_name?: string;
+  author_avatar_url?: string;
 }
+
+type SortOption = 'created' | 'hot' | 'trending';
 
 const HiveUsersPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 12;
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const [sortOption, setSortOption] = useState<SortOption>('created');
+  const [hasMore, setHasMore] = useState(true);
+  const postsPerLoad = 12;
   const navigate = useNavigate();
 
-  const fetchHivePosts = useCallback(async () => {
-    setLoading(true);
+  const fetchHivePosts = useCallback(async (
+    isInitialLoad: boolean = true,
+    currentSortOption: SortOption = sortOption,
+    lastAuthor: string = '',
+    lastPermlink: string = ''
+  ) => {
+    if (isInitialLoad) {
+      setLoading(true);
+      setPosts([]); // Clear posts on initial load or refresh
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const response = await fetch(HIVE_API_NODE, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'condenser_api.get_discussions_by_created',
-          params: [{
-            tag: 'introduceyourself',
-            limit: 50 // Buscar os 50 posts mais recentes com a tag
-          }],
-          id: 1,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      let discussionMethod;
+      switch (currentSortOption) {
+        case 'hot':
+          discussionMethod = getDiscussionsByHot;
+          break;
+        case 'trending':
+          discussionMethod = getDiscussionsByTrending;
+          break;
+        case 'created':
+        default:
+          discussionMethod = getDiscussionsByCreated;
+          break;
       }
 
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error.message);
+      const params: any = {
+        tag: 'introduceyourself',
+        limit: postsPerLoad + (isInitialLoad ? 0 : 1) // Fetch one extra to check if there's more
+      };
+
+      if (!isInitialLoad && lastAuthor && lastPermlink) {
+        params.start_author = lastAuthor;
+        params.start_permlink = lastPermlink;
       }
 
-      const rawPosts = data.result;
-      const processedPosts: Post[] = await Promise.all(rawPosts.map(async (post: any) => {
+      const rawPosts = await discussionMethod(params);
+
+      // Remove the first post if it's a duplicate from the previous load
+      const newPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
+
+      const processedPosts: Post[] = await Promise.all(newPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
         let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`; // Default fallback
 
@@ -96,36 +123,44 @@ const HiveUsersPage = () => {
         };
       }));
 
-      setPosts(processedPosts);
-      showSuccess("Postagens da Hive carregadas com sucesso!");
-    } catch (error: any) { // Explicitly type error as any to access .message
+      setPosts(prevPosts => isInitialLoad ? processedPosts : [...prevPosts, ...processedPosts]);
+      setHasMore(rawPosts.length > postsPerLoad);
+      if (isInitialLoad) {
+        showSuccess("Postagens da Hive carregadas com sucesso!");
+      }
+    } catch (error: any) {
       console.error("Erro ao buscar postagens da Hive:", error);
       showError(`Falha ao carregar postagens da Hive: ${error.message}.`);
-      setPosts([]); // Clear posts on error
+      setPosts([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+      setLoadingRefresh(false);
     }
-  }, []);
+  }, [sortOption]);
 
   useEffect(() => {
-    fetchHivePosts();
-  }, [fetchHivePosts]);
+    fetchHivePosts(true, sortOption);
+  }, [sortOption, fetchHivePosts]);
 
   const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (post.author_display_name && post.author_display_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    post.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    post.author.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    (post.author_display_name && post.author_display_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
   );
 
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const handleLoadMore = () => {
+    if (posts.length > 0) {
+      const lastPost = posts[posts.length - 1];
+      fetchHivePosts(false, sortOption, lastPost.author, lastPost.permlink);
+    }
+  };
 
   const handleRefresh = () => {
+    setLoadingRefresh(true);
     showSuccess("Atualizando lista de postagens...");
-    fetchHivePosts();
+    fetchHivePosts(true, sortOption);
   };
 
   const formatDate = (dateString: string) => {
@@ -142,28 +177,24 @@ const HiveUsersPage = () => {
     return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando postagens da Hive...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getSortOptionLabel = (option: SortOption) => {
+    switch (option) {
+      case 'created': return 'Mais Recentes';
+      case 'hot': return 'Mais Comentadas';
+      case 'trending': return 'Mais Votadas';
+      default: return 'Ordenar por';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-4">
             Postagens #introduceyourself na Hive Blockchain
           </h1>
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
             Descubra as últimas postagens de introdução na comunidade Hive.
           </p>
           
@@ -176,11 +207,33 @@ const HiveUsersPage = () => {
                 placeholder="Buscar por título ou autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600"
               />
             </div>
-            <Button onClick={handleRefresh} className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
+                  {getSortOptionLabel(sortOption)} <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 dark:border-gray-700">
+                <DropdownMenuItem onClick={() => setSortOption('created')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+                  Mais Recentes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOption('hot')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+                  Mais Comentadas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOption('trending')} className="dark:text-gray-50 hover:dark:bg-gray-700">
+                  Mais Votadas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+              {loadingRefresh ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               Atualizar
             </Button>
           </div>
@@ -188,35 +241,35 @@ const HiveUsersPage = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <User className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
-                  <p className="text-sm text-gray-600">Postagens encontradas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{posts.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Postagens carregadas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Calendar className="h-8 w-8 text-green-600 mr-3" />
+                <Search className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{filteredPosts.length}</p>
-                  <p className="text-sm text-gray-600">Postagens filtradas</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{filteredPosts.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Postagens filtradas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6">
               <div className="flex items-center">
                 <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{new Set(posts.map(p => p.author)).size}</p>
-                  <p className="text-sm text-gray-600">Autores únicos</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">{new Set(posts.map(p => p.author)).size}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Autores únicos</p>
                 </div>
               </div>
             </CardContent>
@@ -225,76 +278,81 @@ const HiveUsersPage = () => {
 
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentPosts.map((post) => (
-            <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
-                    <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{post.title}</CardTitle>
-                    <CardDescription className="text-sm text-blue-600">
-                      Por <span className="font-medium">@{post.author}</span>
-                    </CardDescription>
+          {loading && posts.length === 0 ? (
+            Array.from({ length: postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
+          ) : (
+            filteredPosts.map((post) => (
+              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 dark:bg-gray-800 dark:border-gray-700">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
+                      <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg dark:text-gray-50">{post.title}</CardTitle>
+                      <CardDescription className="text-sm text-blue-600 dark:text-blue-400">
+                        Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
+                      </CardDescription>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700 text-sm mb-3">{post.body}</p>
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <div className="flex items-center">
-                    <Calendar className="h-3 w-3 mr-1" /> {formatDate(post.created)}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">{post.body}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" /> {formatDate(post.created)}
+                    </div>
+                    <div className="flex items-center">
+                      <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
+                    </div>
+                    <div className="flex items-center">
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
+                  <div className="pt-2 mb-4">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      #introduceyourself
+                    </Badge>
                   </div>
-                  <div className="flex items-center">
-                    <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => navigate(`/users/${post.author}`)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Ver Perfil
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="flex-1" 
+                      onClick={() => navigate(`/post/${post.author}/${post.permlink}`)}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ver Post
+                    </Button>
                   </div>
-                </div>
-                <div className="pt-2 mb-4">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    #introduceyourself
-                  </Badge>
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={() => navigate(`/users/${post.author}`)}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Ver Perfil do Autor
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
-        {/* Pagination */}
-        {filteredPosts.length > postsPerPage && (
+        {/* Load More Button */}
+        {hasMore && filteredPosts.length > 0 && (
           <div className="flex justify-center mt-8">
-            <div className="flex space-x-2">
-              {Array.from({ length: Math.ceil(filteredPosts.length / postsPerPage) }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  onClick={() => paginate(page)}
-                  className="w-10 h-10"
-                >
-                  {page}
-                </Button>
-              ))}
-            </div>
+            <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+              {loadingMore ? 'Carregando...' : 'Carregar Mais'}
+            </Button>
           </div>
         )}
 
         {/* Empty State */}
-        {filteredPosts.length === 0 && (
-          <div className="text-center py-12">
+        {filteredPosts.length === 0 && !loading && (
+          <div className="text-center py-12 dark:text-gray-300">
             <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhuma postagem encontrada</h3>
-            <p className="text-gray-600">Tente ajustar sua busca ou atualizar a lista.</p>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-2">Nenhuma postagem encontrada</h3>
+            <p className="text-gray-600 dark:text-gray-300">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
       </div>
