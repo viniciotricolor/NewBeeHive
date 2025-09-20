@@ -11,7 +11,8 @@ import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/About";
 import Footer from "./components/Footer";
-import { Analytics } from "@vercel/analytics/react"; // Importando Analytics para React
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react"; // Importando SpeedInsights para React
 
 const queryClient = new QueryClient();
 
@@ -38,7 +39,8 @@ const App = () => (
               </Routes>
             </div>
             <Footer />
-            <Analytics /> {/* Adicionando o componente Analytics aqui */}
+            <Analytics />
+            <SpeedInsights /> {/* Adicionando o componente SpeedInsights aqui */}
           </div>
         </BrowserRouter>
       </TooltipProvider>
