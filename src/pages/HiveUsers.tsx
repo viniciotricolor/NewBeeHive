@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Search, User, ExternalLink, RefreshCw, MessageSquare, ThumbsUp, ChevronDown } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { useNavigate, Link } from 'react-router-dom';
-import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, getAccounts } from '@/services/hive'; // Importar getAccounts
+import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, callHiveApi } from '@/services/hive';
 import { useDebounce } from '@/hooks/use-debounce';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import {
@@ -18,13 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface Post {
   title: string;
@@ -38,38 +31,9 @@ interface Post {
   json_metadata: string;
   author_display_name?: string;
   author_avatar_url?: string;
-  tags: string[]; // Adicionar tags para filtro de país
 }
 
 type SortOption = 'created' | 'hot' | 'trending';
-
-const countries = [
-  { label: 'Todos os Países', value: 'all' },
-  { label: 'Brasil', value: 'brazil' },
-  { label: 'Portugal', value: 'portugal' },
-  { label: 'Estados Unidos', value: 'usa' },
-  { label: 'Canadá', value: 'canada' },
-  { label: 'Reino Unido', value: 'uk' },
-  { label: 'Alemanha', value: 'germany' },
-  { label: 'França', value: 'france' },
-  { label: 'Espanha', value: 'spain' },
-  // Adicione mais países conforme necessário
-];
-
-// Função auxiliar para normalizar a string de localização para uma tag de país
-const normalizeLocationToCountryTag = (location: string): string | null => {
-  if (!location) return null;
-  const lowerLocation = location.toLowerCase();
-  if (lowerLocation.includes('brasil') || lowerLocation.includes('brazil')) return 'brazil';
-  if (lowerLocation.includes('portugal')) return 'portugal';
-  if (lowerLocation.includes('usa') || lowerLocation.includes('united states') || lowerLocation.includes('estados unidos')) return 'usa';
-  if (lowerLocation.includes('canada')) return 'canada';
-  if (lowerLocation.includes('uk') || lowerLocation.includes('united kingdom') || lowerLocation.includes('reino unido')) return 'uk';
-  if (lowerLocation.includes('germany') || lowerLocation.includes('deutschland') || lowerLocation.includes('alemanha')) return 'germany';
-  if (lowerLocation.includes('france') || lowerLocation.includes('frança')) return 'france';
-  if (lowerLocation.includes('spain') || lowerLocation.includes('espanha')) return 'spain';
-  return null;
-};
 
 const HiveUsersPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -79,7 +43,6 @@ const HiveUsersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [sortOption, setSortOption] = useState<SortOption>('created');
-  const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const postsPerLoad = 12;
@@ -127,54 +90,22 @@ const HiveUsersPage = () => {
 
       let newRawPosts = isInitialLoad ? rawPosts : rawPosts.slice(1);
 
-      // Coletar autores únicos para buscar seus perfis em lote
-      const uniqueAuthors = Array.from(new Set(newRawPosts.map((post: any) => post.author)));
-      const authorAccountsMap = new Map<string, any>();
-
-      if (uniqueAuthors.length > 0) {
-        try {
-          const accountsData = await getAccounts({ names: uniqueAuthors });
-          accountsData.forEach((account: any) => {
-            authorAccountsMap.set(account.name, account);
-          });
-        } catch (e) {
-          console.warn("Não foi possível buscar contas de autores para inferência de localização:", e);
-        }
-      }
-
       const processedPosts: Post[] = await Promise.all(newRawPosts.map(async (post: any) => {
         let authorDisplayName = post.author;
         let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
-        let postTags: string[] = [];
 
-        const account = authorAccountsMap.get(post.author);
-        if (account) {
-          try {
-            const metadata = JSON.parse(account.json_metadata);
-            if (metadata && metadata.profile) {
-              if (metadata.profile.name) authorDisplayName = metadata.profile.name;
-              if (metadata.profile.profile_image) authorAvatarUrl = metadata.profile.profile_image;
-              if (metadata.profile.location) {
-                const inferredCountryTag = normalizeLocationToCountryTag(metadata.profile.location);
-                if (inferredCountryTag) {
-                  postTags.push(inferredCountryTag); // Adicionar país inferido às tags
-                }
-              }
-            }
-          } catch (e) {
-            console.warn("Não foi possível analisar metadados do usuário para localização:", e);
-          }
-        }
-
-        // Adicionar tags existentes da postagem (se houver)
         try {
-          const postMetadata = JSON.parse(post.json_metadata);
-          if (postMetadata && postMetadata.tags && Array.isArray(postMetadata.tags)) {
-            // Usar Set para garantir tags únicas e adicionar as tags da postagem
-            postTags = [...new Set([...postTags, ...postMetadata.tags.map((tag: string) => tag.toLowerCase())])];
+          const metadata = JSON.parse(post.json_metadata);
+          if (metadata && metadata.profile) {
+            if (metadata.profile.name) {
+              authorDisplayName = metadata.profile.name;
+            }
+            if (metadata.profile.profile_image) {
+              authorAvatarUrl = metadata.profile.profile_image;
+            }
           }
         } catch (e) {
-          // Metadados da postagem podem estar malformados ou ausentes
+          // Metadados podem estar malformados ou ausentes, fallback já definido
         }
 
         return {
@@ -189,7 +120,6 @@ const HiveUsersPage = () => {
           json_metadata: post.json_metadata,
           author_display_name: authorDisplayName,
           author_avatar_url: authorAvatarUrl,
-          tags: postTags, // Atribuir tags processadas (incluindo país inferido)
         };
       }));
 
@@ -229,15 +159,11 @@ const HiveUsersPage = () => {
     fetchHivePosts(true, sortOption);
   }, [sortOption, fetchHivePosts]);
 
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                          post.author.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                          (post.author_display_name && post.author_display_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-
-    const matchesCountry = selectedCountry === 'all' || post.tags.includes(selectedCountry);
-
-    return matchesSearch && matchesCountry;
-  });
+  const filteredPosts = posts.filter(post =>
+    post.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    post.author.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    (post.author_display_name && post.author_display_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+  );
 
   const handleLoadMore = () => {
     if (posts.length > 0) {
@@ -263,6 +189,7 @@ const HiveUsersPage = () => {
     });
   };
 
+  // Função ajustada para retornar a contagem de votos
   const getVoteCount = (votes: Array<{ percent: number }>) => {
     return votes.length;
   };
@@ -305,18 +232,6 @@ const HiveUsersPage = () => {
                 className="pl-10 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600"
               />
             </div>
-            <Select onValueChange={setSelectedCountry} value={selectedCountry}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
-                <SelectValue placeholder="Filtrar por País" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 dark:border-gray-700">
-                {countries.map((country) => (
-                  <SelectItem key={country.value} value={country.value} className="dark:text-gray-50 hover:dark:bg-gray-700">
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2 bg-white dark:bg-gray-700 dark:text-gray-50 dark:border-gray-600">
@@ -414,18 +329,13 @@ const HiveUsersPage = () => {
                       <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                     </div>
                     <div className="flex items-center">
-                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)}
+                      <ThumbsUp className="h-3 w-3 mr-1" /> {getVoteCount(post.active_votes)} {/* Usando getVoteCount */}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
                     <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                       #introduceyourself
                     </Badge>
-                    {post.tags.filter(tag => tag !== 'introduceyourself').map(tag => (
-                      <Badge key={tag} variant="outline" className="ml-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                        #{tag}
-                      </Badge>
-                    ))}
                   </div>
                   <div className="flex gap-2">
                     <Button 
