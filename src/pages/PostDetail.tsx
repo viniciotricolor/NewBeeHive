@@ -9,6 +9,8 @@ import { ArrowLeft, ExternalLink, Calendar, MessageSquare, ThumbsUp, User } from
 import { showSuccess, showError } from "@/utils/toast";
 import { getContent, getAccounts } from '@/services/hive';
 import PostCardSkeleton from '@/components/PostCardSkeleton'; // Reusing for loading state
+import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
+import remarkGfm from 'remark-gfm'; // Importar remark-gfm para suporte a GitHub Flavored Markdown
 
 interface PostDetailData {
   title: string;
@@ -167,7 +169,16 @@ const PostDetailPage = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-6" dangerouslySetInnerHTML={{ __html: post.body }} />
+              <div className="prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 mb-6">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                  }}
+                >
+                  {post.body}
+                </ReactMarkdown>
+              </div>
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800" 
                 onClick={() => window.open(post.url, '_blank')}
