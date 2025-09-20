@@ -43,7 +43,7 @@ interface Comment {
   author_reputation?: number; // Adicionado para armazenar a reputação do autor
 }
 
-const REPUTATION_THRESHOLD = 25; // Reputação mínima para exibir um comentário (contas novas começam em 25)
+const REPUTATION_THRESHOLD = 30; // Reputação mínima para exibir um comentário (aumentado de 25 para 30)
 
 const PostDetail = () => {
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
