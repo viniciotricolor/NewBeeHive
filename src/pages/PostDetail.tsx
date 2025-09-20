@@ -256,7 +256,7 @@ const PostDetail = () => {
                 <ThumbsUp className="h-4 w-4 mr-1" /> {post.active_votes.length} Curtidas
               </div>
               <div className="flex items-center">
-                <span className="font-bold text-green-600">${post.pending_payout_value}</span>
+                <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
               </div>
             </div>
           </CardHeader>
@@ -340,7 +340,7 @@ const PostDetail = () => {
                             <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
                           </div>
                           <div className="flex items-center">
-                            <span className="font-bold text-green-600">${comment.pending_payout_value}</span>
+                            <span className="font-bold text-green-600">${comment.pending_payout_value.replace(' HBD', '')}</span>
                           </div>
                         </div>
                       </CardContent>

@@ -391,7 +391,7 @@ const HiveUsersPage = () => {
                       <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length}
                     </div>
                     <div className="flex items-center">
-                      <span className="font-bold text-green-600">${post.pending_payout_value}</span> {/* Mantendo verde para o valor */}
+                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span> {/* Alterado aqui */}
                     </div>
                   </div>
                   <div className="pt-2 mb-4">
