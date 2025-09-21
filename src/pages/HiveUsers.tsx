@@ -101,20 +101,24 @@ const HiveUsersPage = () => {
 
     try {
       let allPosts: any[] = [];
-      let startAuthor = username;
-      let startPermlink = '';
+      let currentStartAuthor = ''; // Inicial: vazio para começar do mais recente
+      let currentStartPermlink = ''; // Inicial: vazio
       let page = 0;
       const maxPages = 5; // Limite de 5 páginas (500 posts) para performance
       const postsPerPage = 100;
 
-      // Paginação reversa: começa pelos posts recentes e vai para os mais antigos
+      // Paginação reversa: começa pelos posts recentes e vai para os mais antigos do blog do usuário
       while (page < maxPages) {
         const params: PostParams = {
-          tag: '', // Tag vazia para todos os posts do blog
+          tag: username, // Tag = nome de usuário para buscar o blog específico
           limit: postsPerPage,
-          start_author: startAuthor,
-          start_permlink: startPermlink,
         };
+
+        // Adiciona start_ apenas se não for a primeira página
+        if (page > 0 && currentStartAuthor && currentStartPermlink) {
+          params.start_author = currentStartAuthor;
+          params.start_permlink = currentStartPermlink;
+        }
 
         const rawPosts = await getDiscussionsByBlog(params);
 
@@ -124,10 +128,11 @@ const HiveUsersPage = () => {
 
         allPosts = [...allPosts, ...rawPosts];
 
-        // Prepara para a próxima página (mais antiga): usa o último post da página atual
-        const lastPost = rawPosts[rawPosts.length - 1];
-        startAuthor = lastPost.author;
-        startPermlink = lastPost.permlink;
+        // Prepara para a próxima página (mais antiga): usa o ÚLTIMO post da página atual
+        // (pois a API retorna em ordem decrescente: recente → antigo)
+        const lastPostInPage = rawPosts[rawPosts.length - 1];
+        currentStartAuthor = lastPostInPage.author;
+        currentStartPermlink = lastPostInPage.permlink;
 
         // Se a página tem menos que o limite, é a última página
         if (rawPosts.length < postsPerPage) {
