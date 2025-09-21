@@ -100,30 +100,58 @@ const HiveUsersPage = () => {
     setHasMore(false);
 
     try {
-      // Correção: Usar getDiscussionsByBlog com tag: '' e start_author: username para buscar posts do blog do usuário
-      // Ordenar por data ascendente para aproximar o post mais antigo (dos últimos 100)
-      const params: PostParams = {
-        tag: '', // Tag vazia para buscar todos os posts do autor
-        limit: 100, // Buscar até 100 posts para encontrar o mais antigo
-        start_author: username, // Especificar o autor
-      };
-      
-      const rawPosts = await getDiscussionsByBlog(params);
+      let allPosts: any[] = [];
+      let startAuthor = username;
+      let startPermlink = '';
+      let page = 0;
+      const maxPages = 5; // Limite de 5 páginas (500 posts) para performance
+      const postsPerPage = 100;
 
-      if (rawPosts && rawPosts.length > 0) {
-        // Ordenar posts pela data de criação em ordem ascendente para encontrar o mais antigo
-        const sortedPosts = [...rawPosts].sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
-        const firstPost = sortedPosts[0]; // Este será o post mais antigo entre os posts buscados
-        
-        const processedPost = await processRawPost(firstPost);
-        setUserFirstPost(processedPost);
-        showSuccess(`Primeiro post de @${username} encontrado!`);
-      } else {
-        showError(`Nenhum post encontrado para @${username}.`);
+      // Paginação reversa: começa pelos posts recentes e vai para os mais antigos
+      while (page < maxPages) {
+        const params: PostParams = {
+          tag: '', // Tag vazia para todos os posts do blog
+          limit: postsPerPage,
+          start_author: startAuthor,
+          start_permlink: startPermlink,
+        };
+
+        const rawPosts = await getDiscussionsByBlog(params);
+
+        if (!rawPosts || rawPosts.length === 0) {
+          break; // Não há mais posts (chegamos ao fim do blog)
+        }
+
+        allPosts = [...allPosts, ...rawPosts];
+
+        // Prepara para a próxima página (mais antiga): usa o último post da página atual
+        const lastPost = rawPosts[rawPosts.length - 1];
+        startAuthor = lastPost.author;
+        startPermlink = lastPost.permlink;
+
+        // Se a página tem menos que o limite, é a última página
+        if (rawPosts.length < postsPerPage) {
+          break;
+        }
+
+        page++;
       }
+
+      if (allPosts.length === 0) {
+        showError(`Nenhum post encontrado para @${username}.`);
+        return;
+      }
+
+      // Ordena por data de criação ascendente (mais antigo primeiro)
+      const sortedPosts = [...allPosts].sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+      const firstPost = sortedPosts[0]; // O mais antigo
+
+      const processedPost = await processRawPost(firstPost);
+      setUserFirstPost(processedPost);
+      showSuccess(`Primeiro post de @${username} encontrado! (Buscado entre ${allPosts.length} posts)`);
     } catch (error: any) {
       console.error("Erro ao buscar primeiro post do usuário:", error);
-      showError(`Falha ao buscar primeiro post: ${error.message}.`);
+      showError(`Falha ao buscar primeiro post: ${error.message}. Verifique se o usuário existe na Hive.`);
     } finally {
       setLoadingUserFirstPost(false);
     }
