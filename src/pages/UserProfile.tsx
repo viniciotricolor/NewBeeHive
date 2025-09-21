@@ -23,6 +23,7 @@ interface Post {
   active_votes: Array<{ percent: number }>;
   json_metadata: string;
   author_avatar_url?: string;
+  image_url?: string; // Nova propriedade para imagem do post
 }
 
 interface UserProfileData {
@@ -42,6 +43,18 @@ const UserProfilePage = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const extractImageFromMetadata = (jsonMetadata: string): string | undefined => {
+    try {
+      const metadata = JSON.parse(jsonMetadata);
+      if (metadata && metadata.image && metadata.image.length > 0) {
+        return metadata.image[0]; // Pega a primeira imagem
+      }
+    } catch (e) {
+      console.warn('Erro ao extrair imagem do metadata:', e);
+    }
+    return undefined;
+  };
 
   const fetchUserProfileAndPosts = useCallback(async () => {
     if (!username) return;
@@ -91,6 +104,7 @@ const UserProfilePage = () => {
         active_votes: post.active_votes,
         json_metadata: post.json_metadata,
         author_avatar_url: avatarUrl,
+        image_url: extractImageFromMetadata(post.json_metadata),
       }));
 
       setProfile({
@@ -135,10 +149,10 @@ const UserProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4">
         <div className="max-w-4xl mx-auto">
           <Link to="/hive-users">
-            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
+            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border rounded-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar para Usuários
             </Button>
@@ -155,11 +169,11 @@ const UserProfilePage = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background p-4 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4 text-center">
         <h1 className="text-3xl font-bold text-foreground mb-4">Perfil não encontrado</h1>
         <p className="text-lg text-muted-foreground mb-6">Não foi possível carregar o perfil para @{username}.</p>
         <Link to="/hive-users">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar para Usuários
           </Button>
@@ -169,27 +183,27 @@ const UserProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link to="/hive-users">
-            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
+            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border rounded-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar para Usuários
             </Button>
           </Link>
-          <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-card border-border">
-            <Avatar className="h-24 w-24">
+          <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-gradient-to-br from-card to-card/80 border-border rounded-xl shadow-xl">
+            <Avatar className="h-24 w-24 ring-4 ring-primary/20">
               <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-              <AvatarFallback className="text-4xl">{profile.display_name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-4xl bg-primary text-primary-foreground">{profile.display_name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="text-center sm:text-left flex-1">
-              <CardTitle className="text-3xl font-bold text-foreground">{profile.display_name}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">{profile.display_name}</CardTitle>
               <CardDescription className="text-xl text-primary mb-2">@{profile.username}</CardDescription>
-              <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">
+              <Badge variant="secondary" className="mb-2 bg-gradient-to-r from-secondary to-muted text-secondary-foreground rounded-full">
                 Reputação: {profile.reputation}
               </Badge>
-              {profile.about && <p className="text-muted-foreground mt-2">{profile.about}</p>}
+              {profile.about && <p className="text-muted-foreground mt-2 italic">{profile.about}</p>}
               <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 mt-3">
                 {profile.website && (
                   <Button 
@@ -239,7 +253,7 @@ const UserProfilePage = () => {
           </Card>
         </div>
 
-        <h2 className="text-3xl font-bold text-foreground mb-6 text-center sm:text-left">Posts de @{profile.username}</h2>
+        <h2 className="text-3xl font-bold text-foreground mb-6 text-center sm:text-left bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">Posts de @{profile.username}</h2>
 
         {profile.posts.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
@@ -248,15 +262,27 @@ const UserProfilePage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.posts.map((post) => (
-              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
+              <Card key={post.permlink} className="hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-card to-card/80 border-border rounded-xl overflow-hidden">
+                {post.image_url && (
+                  <div className="h-32 bg-gradient-to-br from-primary/10 to-secondary/10">
+                    <img 
+                      src={post.image_url} 
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 ring-2 ring-primary/20">
                       <AvatarImage src={post.author_avatar_url} alt={post.author} />
                       <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <CardTitle className="text-xl text-card-foreground">{post.title}</CardTitle>
+                      <CardTitle className="text-xl text-card-foreground font-bold">{post.title}</CardTitle>
                       <CardDescription className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
                       </CardDescription>
@@ -264,7 +290,7 @@ const UserProfilePage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-card-foreground mb-4">{post.body}</p>
+                  <p className="text-card-foreground mb-4 line-clamp-2">{post.body}</p>
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                     <div className="flex items-center">
                       <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}
@@ -274,7 +300,7 @@ const UserProfilePage = () => {
                     </div>
                   </div>
                   <Button 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" 
                     onClick={() => window.open(post.url, '_blank')}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />

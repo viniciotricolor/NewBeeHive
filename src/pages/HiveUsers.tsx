@@ -34,6 +34,7 @@ interface Post {
   author_display_name?: string;
   author_avatar_url?: string;
   pending_payout_value: string;
+  image_url?: string; // Nova propriedade para imagem do post
 }
 
 type SortOption = 'created' | 'hot' | 'trending';
@@ -54,9 +55,26 @@ const HiveUsersPage = () => {
   const [userFirstPost, setUserFirstPost] = useState<Post | null>(null);
   const [loadingUserFirstPost, setLoadingUserFirstPost] = useState(false);
 
+  const extractImageFromMetadata = (jsonMetadata: string): string | undefined => {
+    try {
+      const metadata = JSON.parse(jsonMetadata);
+      if (metadata && metadata.image && metadata.image.length > 0) {
+        return metadata.image[0]; // Pega a primeira imagem
+      }
+      if (metadata && metadata.tags && metadata.tags.includes('image')) {
+        // Fallback para posts com tags de imagem
+        return `https://images.hive.blog/DQmX...`; // Placeholder genérico se necessário
+      }
+    } catch (e) {
+      console.warn('Erro ao extrair imagem do metadata:', e);
+    }
+    return undefined;
+  };
+
   const processRawPost = useCallback(async (post: any): Promise<Post> => {
     let authorDisplayName = post.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
+    const imageUrl = extractImageFromMetadata(post.json_metadata);
 
     try {
       const metadata = JSON.parse(post.json_metadata);
@@ -85,6 +103,7 @@ const HiveUsersPage = () => {
       author_display_name: authorDisplayName,
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: post.pending_payout_value,
+      image_url: imageUrl,
     };
   }, []);
 
@@ -260,11 +279,11 @@ const HiveUsersPage = () => {
   const isEmptyState = postsToDisplay.length === 0 && !isLoadingContent;
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+        {/* Header com gradiente */}
+        <div className="text-center mb-8 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6 shadow-lg">
+          <h1 className="text-4xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">
             {userFirstPost ? `Primeiro Post de @${userFirstPost.author}` : 'NewBee Hive 🐝 - Explorar Postagens de Introdução na Hive Blockchain'}
           </h1>
           <p className="text-lg text-muted-foreground mb-2">
@@ -276,16 +295,16 @@ const HiveUsersPage = () => {
             </p>
           )}
           
-          {/* Search and Controls */}
+          {/* Search and Controls com bordas arredondadas */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <div className="relative w-full sm:w-96 flex">
+            <div className="relative w-full sm:w-96 flex rounded-full shadow-md overflow-hidden">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Buscar primeiro post por nome de usuário..."
                 value={usernameSearchTerm}
                 onChange={(e) => setUsernameSearchTerm(e.target.value)}
-                className="pl-10 pr-10 bg-input border-input text-foreground flex-grow"
+                className="pl-10 pr-10 bg-background border-none text-foreground flex-grow focus:ring-2 focus:ring-primary"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSearchClick();
@@ -306,7 +325,7 @@ const HiveUsersPage = () => {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              <Button onClick={handleSearchClick} disabled={loadingUserFirstPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button onClick={handleSearchClick} disabled={loadingUserFirstPost} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-r-full">
                 {loadingUserFirstPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
             </div>
@@ -314,23 +333,23 @@ const HiveUsersPage = () => {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2 bg-card text-card-foreground border-border">
+                    <Button variant="outline" className="flex items-center gap-2 bg-card text-card-foreground border-border rounded-full">
                       {getSortOptionLabel(sortOption)} <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border">
-                    <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground">
+                  <DropdownMenuContent align="end" className="bg-popover text-popover-foreground border-border rounded-xl">
+                    <DropdownMenuItem onClick={() => setSortOption('created')} className="hover:bg-accent hover:text-accent-foreground rounded-lg">
                       Mais Recentes
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground">
+                    <DropdownMenuItem onClick={() => setSortOption('hot')} className="hover:bg-accent hover:text-accent-foreground rounded-lg">
                       Mais Comentadas
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('trending')} className="hover:bg-accent hover:text-accent-foreground">
+                    <DropdownMenuItem onClick={() => setSortOption('trending')} className="hover:bg-accent hover:text-accent-foreground rounded-lg">
                       Mais Votadas
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button onClick={handleRefresh} disabled={loadingRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
                   {loadingRefresh ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
@@ -343,10 +362,10 @@ const HiveUsersPage = () => {
           </div>
         </div>
 
-        {/* Stats - Escondidos se uma busca específica estiver ativa */}
+        {/* Stats com cards mais elegantes */}
         {!userFirstPost && !loadingUserFirstPost && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <User className="h-8 w-8 text-primary mr-3" />
@@ -357,7 +376,7 @@ const HiveUsersPage = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <Search className="h-8 w-8 text-green-600 mr-3" />
@@ -368,7 +387,7 @@ const HiveUsersPage = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <ExternalLink className="h-8 w-8 text-purple-600 mr-3" />
@@ -382,21 +401,33 @@ const HiveUsersPage = () => {
           </div>
         )}
 
-        {/* Posts Grid */}
+        {/* Posts Grid com imagens e animações */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoadingContent ? (
             Array.from({ length: userFirstPost ? 1 : postsPerLoad }).map((_, i) => <PostCardSkeleton key={i} />)
           ) : (
             postsToDisplay.map((post) => (
-              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
+              <Card key={post.permlink} className="hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-card to-card/80 border-border rounded-xl overflow-hidden">
+                {post.image_url && (
+                  <div className="h-48 bg-gradient-to-br from-primary/10 to-secondary/10">
+                    <img 
+                      src={post.image_url} 
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-10 w-10 ring-2 ring-primary/20">
                       <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
-                      <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary text-primary-foreground">{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <CardTitle className="text-lg text-card-foreground">{post.title}</CardTitle>
+                      <CardTitle className="text-lg text-card-foreground font-bold">{post.title}</CardTitle>
                       <CardDescription className="text-sm text-primary">
                         Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
                       </CardDescription>
@@ -404,11 +435,11 @@ const HiveUsersPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
+                  <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3 line-clamp-3">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} className="text-primary hover:underline" />
                       }}
                     >
                       {post.body}
@@ -430,14 +461,14 @@ const HiveUsersPage = () => {
                   </div>
                   {!userFirstPost && ( // Conditionally render the badge
                     <div className="pt-2 mb-4">
-                      <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+                      <Badge variant="secondary" className="bg-gradient-to-r from-secondary to-muted text-secondary-foreground rounded-full">
                         #introduceyourself
                       </Badge>
                     </div>
                   )}
                   <div className="flex gap-2">
                     <Button 
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" 
                       onClick={() => navigate(`/users/${post.author}`)}
                     >
                       <User className="h-4 w-4 mr-2" />
@@ -445,7 +476,7 @@ const HiveUsersPage = () => {
                     </Button>
                     <Button 
                       variant="outline"
-                      className="flex-1 bg-card text-card-foreground border-border" 
+                      className="flex-1 bg-card text-card-foreground border-border rounded-lg" 
                       onClick={() => navigate(`/post/${post.author}/${post.permlink}`)}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -458,26 +489,26 @@ const HiveUsersPage = () => {
           )}
         </div>
 
-        {/* Load More Button */}
+        {/* Load More Button com animação */}
         {hasMore && postsToDisplay.length > 0 && !userFirstPost && (
           <div className="flex justify-center mt-8">
-            <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={handleLoadMore} disabled={loadingMore} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 shadow-lg">
               {loadingMore ? 'Carregando...' : 'Carregar Mais'}
             </Button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State com ícone maior */}
         {isEmptyState && !usernameSearchTerm.trim() && (
           <div className="text-center py-12 text-muted-foreground">
-            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <User className="h-20 w-20 text-muted-foreground mx-auto mb-4 animate-pulse" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma postagem de introdução encontrada</h3>
             <p className="text-muted-foreground">Tente ajustar sua busca ou atualizar a lista.</p>
           </div>
         )}
         {isEmptyState && usernameSearchTerm.trim() && !loadingUserFirstPost && (
           <div className="text-center py-12 text-muted-foreground">
-            <User className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <User className="h-20 w-20 text-muted-foreground mx-auto mb-4 animate-pulse" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum post encontrado para "{usernameSearchTerm}"</h3>
             <p className="text-muted-foreground">Verifique o nome de usuário e tente novamente.</p>
           </div>
