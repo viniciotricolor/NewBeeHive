@@ -25,7 +25,6 @@ interface Post {
   author_display_name?: string;
   author_avatar_url?: string;
   pending_payout_value: string;
-  image_urls?: string[]; // Nova propriedade para múltiplas imagens do post
 }
 
 interface Comment {
@@ -43,7 +42,6 @@ interface Comment {
   depth: number;
   author_reputation?: number;
   raw_author_reputation?: number;
-  image_urls?: string[]; // Nova propriedade para imagens em comentários
 }
 
 const PostDetail = () => {
@@ -54,22 +52,9 @@ const PostDetail = () => {
   const [loadingPost, setLoadingPost] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const extractImagesFromMetadata = (jsonMetadata: string): string[] => {
-    try {
-      const metadata = JSON.parse(jsonMetadata);
-      if (metadata && metadata.image && Array.isArray(metadata.image)) {
-        return metadata.image.filter(img => img && typeof img === 'string');
-      }
-    } catch (e) {
-      console.warn('Erro ao extrair imagens do metadata:', e);
-    }
-    return [];
-  };
-
   const processRawComment = async (comment: any, authorReputationMap: Map<string, { formatted: number, raw: number }>): Promise<Comment> => {
     let authorDisplayName = comment.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${comment.author}/avatar`;
-    const imageUrls = extractImagesFromMetadata(comment.json_metadata);
 
     try {
       const metadata = JSON.parse(comment.json_metadata);
@@ -102,7 +87,6 @@ const PostDetail = () => {
       depth: comment.depth,
       author_reputation: reputationInfo?.formatted,
       raw_author_reputation: reputationInfo?.raw,
-      image_urls: imageUrls,
     };
   };
 
@@ -126,7 +110,6 @@ const PostDetail = () => {
 
       let authorDisplayName = rawPost.author;
       let authorAvatarUrl = `https://images.hive.blog/u/${rawPost.author}/avatar`;
-      const imageUrls = extractImagesFromMetadata(rawPost.json_metadata);
 
       try {
         const metadata = JSON.parse(rawPost.json_metadata);
@@ -155,7 +138,6 @@ const PostDetail = () => {
         author_display_name: authorDisplayName,
         author_avatar_url: authorAvatarUrl,
         pending_payout_value: rawPost.pending_payout_value,
-        image_urls: imageUrls,
       };
 
       setPost(processedPost);
@@ -226,7 +208,7 @@ const PostDetail = () => {
 
   if (loadingPost) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4 flex justify-center items-center">
+      <div className="min-h-screen bg-background p-4 flex justify-center items-center">
         <PostCardSkeleton />
       </div>
     );
@@ -234,48 +216,35 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4 text-center text-muted-foreground">
+      <div className="min-h-screen bg-background p-4 text-center text-muted-foreground">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Postagem não encontrada</h2>
         <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
-        <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">Voltar para a Home</Button>
+        <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">Voltar para a Home</Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 p-4">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
+        <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground">
           Voltar
         </Button>
 
-        <Card className="bg-gradient-to-br from-card to-card/80 border-border rounded-xl shadow-xl">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-4">
             <div className="flex items-center space-x-4 mb-4">
-              <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+              <Avatar className="h-12 w-12">
                 <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
-                <AvatarFallback className="bg-primary text-primary-foreground">{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-2xl text-card-foreground font-bold bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">{post.title}</CardTitle>
+                <CardTitle className="text-2xl text-card-foreground">{post.title}</CardTitle>
                 <CardDescription className="text-md text-primary">
                   Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
                 </CardDescription>
               </div>
             </div>
-            {/* Imagens do post */}
-            {post.image_urls && post.image_urls.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {post.image_urls.slice(0, 4).map((img, index) => (
-                  <img 
-                    key={index} 
-                    src={img} 
-                    alt={`Imagem ${index + 1} do post`}
-                    className="w-full h-48 object-cover rounded-lg shadow-md"
-                  />
-                ))}
-              </div>
-            )}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
@@ -292,12 +261,11 @@ const PostDetail = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4 prose-headings:text-foreground prose-a:text-primary">
+            <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} className="hover:underline" />,
-                  img: ({ node, ...props }) => <img {...props} className="rounded-lg shadow-md max-w-full h-auto" />
+                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                 }}
               >
                 {post.body}
@@ -305,7 +273,7 @@ const PostDetail = () => {
             </div>
             <div className="mt-6 flex gap-2">
               <Button 
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg" 
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
                 onClick={() => navigate(`/users/${post.author}`)}
               >
                 <User className="h-4 w-4 mr-2" />
@@ -313,7 +281,7 @@ const PostDetail = () => {
               </Button>
               <Button 
                 variant="outline"
-                className="flex-1 bg-card text-card-foreground border-border rounded-lg" 
+                className="flex-1 bg-card text-card-foreground border-border" 
                 onClick={() => window.open(post.url, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -321,9 +289,9 @@ const PostDetail = () => {
               </Button>
             </div>
 
-            {/* Seção de Comentários com design aprimorado */}
+            {/* Seção de Comentários */}
             <div className="mt-8 pt-8 border-t border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-6 bg-gradient-to-r from-primary to-destructive bg-clip-text text-transparent">Comentários ({comments.length})</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Comentários ({comments.length})</h2>
 
               {loadingComments ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -332,21 +300,21 @@ const PostDetail = () => {
                 </div>
               ) : comments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-lg">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {comments.map((comment) => (
-                    <Card key={comment.id} className="bg-gradient-to-br from-card to-card/80 border-border shadow-sm rounded-xl">
+                    <Card key={comment.id} className="bg-card border-border shadow-sm">
                       <CardHeader className="pb-3">
                         <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8 ring-1 ring-primary/20">
+                          <Avatar className="h-8 w-8">
                             <AvatarImage src={comment.author_avatar_url} alt={comment.author_display_name} />
-                            <AvatarFallback className="bg-primary text-primary-foreground text-xs">{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <CardTitle className="text-md text-card-foreground font-semibold">{comment.author_display_name || comment.author}</CardTitle>
+                            <CardTitle className="text-md text-card-foreground">{comment.author_display_name || comment.author}</CardTitle>
                             <CardDescription className="text-xs text-muted-foreground">
                               <Link to={`/users/${comment.author}`} className="font-medium hover:underline text-primary">@{comment.author}</Link> • {formatDate(comment.created)}
                               {comment.author_reputation !== undefined && (
@@ -357,24 +325,11 @@ const PostDetail = () => {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        {/* Imagens do comentário */}
-                        {comment.image_urls && comment.image_urls.length > 0 && (
-                          <div className="grid grid-cols-1 gap-2 mb-3">
-                            {comment.image_urls.slice(0, 2).map((img, index) => (
-                              <img 
-                                key={index} 
-                                src={img} 
-                                alt={`Imagem ${index + 1} do comentário`}
-                                className="w-full h-32 object-cover rounded-lg shadow-sm"
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3 prose-a:text-primary">
+                        <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} className="hover:underline" />
+                              a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                             }}
                           >
                             {comment.body}
