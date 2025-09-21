@@ -100,14 +100,15 @@ const HiveUsersPage = () => {
     setHasMore(false);
 
     try {
+      // Correção: Usar getDiscussionsByBlog com tag: '' e start_author: username para buscar posts do blog do usuário
+      // Ordenar por data ascendente para aproximar o post mais antigo (dos últimos 100)
       const params: PostParams = {
-        tag: '', // Tag vazia para buscar todos os posts do autor, independentemente da categoria
+        tag: '', // Tag vazia para buscar todos os posts do autor
         limit: 100, // Buscar até 100 posts para encontrar o mais antigo
         start_author: username, // Especificar o autor
       };
       
-      // Usar getDiscussionsByCreated para buscar posts por autor, depois ordenar para encontrar o mais antigo
-      const rawPosts = await getDiscussionsByCreated(params);
+      const rawPosts = await getDiscussionsByBlog(params);
 
       if (rawPosts && rawPosts.length > 0) {
         // Ordenar posts pela data de criação em ordem ascendente para encontrar o mais antigo

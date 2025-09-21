@@ -78,7 +78,8 @@ const UserProfilePage = () => {
         }
       }
 
-      const postsData = await getDiscussionsByBlog({ tag: username, limit: 20 });
+      // Correção: Usar tag: '' e start_author: username para buscar posts do blog do usuário
+      const postsData = await getDiscussionsByBlog({ tag: '', start_author: username, limit: 20 });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
