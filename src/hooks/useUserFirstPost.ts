@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByBlog, PostParams } from '@/services/hive';
-import { processRawPost } from '@/pages/HiveUsers'; // Import temporário; mover para utils se necessário
+import { processRawPost } from '@/utils/postUtils';
 
 interface Post {
   title: string;

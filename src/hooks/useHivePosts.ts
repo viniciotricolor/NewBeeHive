@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
-import { processRawPost } from '@/pages/HiveUsers'; // Import temporário; mover para utils se necessário
+import { processRawPost } from '@/utils/postUtils';
 
 export type SortOption = 'created' | 'hot' | 'trending';
 
