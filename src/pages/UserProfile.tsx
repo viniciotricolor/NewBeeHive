@@ -49,7 +49,7 @@ const UserProfilePage = () => {
       showError("Nome de usuário inválido. Por favor, forneça um nome de usuário válido.");
       setProfile(null); // Garante que o perfil seja nulo para um username inválido
       setLoading(false);
-      return; // <-- Adicionado para parar a execução aqui
+      return;
     }
 
     setLoading(true);
@@ -89,8 +89,8 @@ const UserProfilePage = () => {
         return;
       }
 
-      // Correção: Usar tag: '' e start_author: username para buscar posts do blog do usuário
-      const postsData = await getDiscussionsByBlog({ tag: '', start_author: cleanUsername, limit: 20 });
+      // CORREÇÃO AQUI: Usar 'cleanUsername' como 'tag' para buscar posts do blog do usuário
+      const postsData = await getDiscussionsByBlog({ tag: cleanUsername, limit: 20 });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
