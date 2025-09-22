@@ -47,8 +47,9 @@ const UserProfilePage = () => {
     const cleanUsername = username?.trim();
     if (!cleanUsername || cleanUsername.length === 0) {
       showError("Nome de usuário inválido. Por favor, forneça um nome de usuário válido.");
+      setProfile(null); // Garante que o perfil seja nulo para um username inválido
       setLoading(false);
-      return;
+      return; // <-- Adicionado para parar a execução aqui
     }
 
     setLoading(true);
