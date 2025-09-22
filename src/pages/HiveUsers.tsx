@@ -13,7 +13,7 @@ import { useHivePosts } from '@/hooks/useHivePosts';
 import { useUserFirstPost } from '@/hooks/useUserFirstPost';
 
 const HiveUsersPage = () => {
-  const postsPerLoad = 12;
+  const postsPerLoad = 10; // Alterado para 10 posts por carga
   const { lastUpdated, handleRefresh: refreshHivePosts } = useHivePosts({ postsPerLoad });
   const { userFirstPost, handleRefresh: refreshUserPost } = useUserFirstPost();
 

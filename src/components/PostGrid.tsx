@@ -27,12 +27,12 @@ interface Post {
 }
 
 const PostGrid = () => {
-  const { posts: hivePosts, loading: loadingHive } = useHivePosts({ postsPerLoad: 12 });
+  const { posts: hivePosts, loading: loadingHive } = useHivePosts({ postsPerLoad: 10 }); // Atualizado para 10
   const { userFirstPost, loadingUserFirstPost } = useUserFirstPost();
 
   const postsToDisplay: Post[] = userFirstPost ? [userFirstPost] : hivePosts;
   const isLoadingContent = loadingUserFirstPost || (loadingHive && hivePosts.length === 0);
-  const postsPerLoad = 12;
+  const postsPerLoad = 10; // Atualizado para 10
 
   const navigate = useNavigate();
 
