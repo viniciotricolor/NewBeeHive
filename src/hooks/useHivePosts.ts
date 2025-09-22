@@ -16,7 +16,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('created');
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(true); // Mantém como true inicialmente
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchPosts = useCallback(async (
@@ -28,7 +28,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
-      setHasMore(false);
+      // Removido: setHasMore(false); - Isso impedia o botão de carregar mais de aparecer inicialmente.
     } else {
       setLoadingMore(true);
     }
@@ -69,7 +69,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       const fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
       
       setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
-      setHasMore(rawPosts.length > postsPerLoad);
+      setHasMore(rawPosts.length > postsPerLoad); // Isso define corretamente se há mais posts
 
       if (isInitialLoad) {
         showSuccess("Postagens de introdução da Hive carregadas com sucesso!");
