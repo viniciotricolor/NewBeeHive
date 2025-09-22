@@ -16,7 +16,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>('created');
-  const [hasMore, setHasMore] = useState(true); // Mantém como true inicialmente
+  const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchPosts = useCallback(async (
@@ -28,7 +28,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
-      // Removido: setHasMore(false); - Isso impedia o botão de carregar mais de aparecer inicialmente.
+      setHasMore(true); // Reset hasMore for initial load
     } else {
       setLoadingMore(true);
     }
@@ -52,7 +52,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       const params: PostParams = {
         tag: tagToUse,
-        limit: postsPerLoad + 1
+        limit: postsPerLoad + 1 // Request one extra to check if there's more
       };
 
       if (startAuthor && startPermlink) {
@@ -60,16 +60,26 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
         params.start_permlink = startPermlink;
       }
 
-      const rawPosts = await discussionMethod(params);
+      let rawPosts = await discussionMethod(params);
       
-      const postsToProcess = (startAuthor && startPermlink && rawPosts.length > 0 && rawPosts[0].author === startAuthor && rawPosts[0].permlink === startPermlink)
-        ? rawPosts.slice(1)
-        : rawPosts;
+      // If loading more, and the API returned the starting post, remove it.
+      // This is a common pattern for Hive API pagination where the start_author/permlink is included.
+      if (!isInitialLoad && startAuthor && startPermlink && rawPosts.length > 0) {
+        // Only slice if the first post returned is indeed the one we started from
+        if (rawPosts[0].author === startAuthor && rawPosts[0].permlink === startPermlink) {
+          rawPosts = rawPosts.slice(1);
+        }
+      }
+      
+      const fetchedPosts = await Promise.all(rawPosts.map(processRawPost));
+      
+      // Determine if there are more posts based on the number of posts received
+      // compared to the requested limit (postsPerLoad + 1, before potential slicing)
+      // If rawPosts.length was originally postsPerLoad + 1, and we sliced one, it means there are more.
+      // If rawPosts.length (after slicing) is less than postsPerLoad, then there are no more.
+      setHasMore(fetchedPosts.length === postsPerLoad);
 
-      const fetchedPosts = await Promise.all(postsToProcess.map(processRawPost));
-      
       setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
-      setHasMore(rawPosts.length > postsPerLoad); // Isso define corretamente se há mais posts
 
       if (isInitialLoad) {
         showSuccess("Postagens de introdução da Hive carregadas com sucesso!");
