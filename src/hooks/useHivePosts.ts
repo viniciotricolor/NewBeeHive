@@ -3,7 +3,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
 import { processRawPost } from '@/utils/postUtils';
 import { Post } from '@/types/hive';
-import { INTRODUCE_YOURSELF_TAG } from '@/config/constants'; // Removido POSTS_PER_LOAD
+import { INTRODUCE_YOURSELF_TAG } from '@/config/constants';
 
 export type SortOption = 'created' | 'hot' | 'trending';
 
@@ -54,7 +54,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       const params: PostParams = {
         tag: tagToUse,
-        limit: postsPerLoad + 1
+        limit: postsPerLoad + 1 // Solicita um a mais para verificar se há mais páginas
       };
 
       if (startAuthor && startPermlink) {
@@ -64,25 +64,30 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       let rawPosts = await discussionMethod(params);
       
+      // Remove o primeiro post se for uma duplicata (ocorre em carregamentos subsequentes)
       if (!isInitialLoad && startAuthor && startPermlink && rawPosts.length > 0) {
         if (rawPosts[0].author === startAuthor && rawPosts[0].permlink === startPermlink) {
           rawPosts = rawPosts.slice(1);
         }
       }
       
-      const fetchedPosts = await Promise.all(rawPosts.map(processRawPost));
+      const processedPosts = await Promise.all(rawPosts.map(processRawPost));
       
-      const newHasMore = fetchedPosts.length === postsPerLoad;
+      // Determina se há mais posts para carregar
+      const newHasMore = processedPosts.length > postsPerLoad;
       setHasMore(newHasMore);
 
-      setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
+      // Pega apenas o número de posts desejado (postsPerLoad) para adicionar ao estado
+      const postsToAdd = newHasMore ? processedPosts.slice(0, postsPerLoad) : processedPosts;
+
+      setPosts(prevPosts => isInitialLoad ? postsToAdd : [...prevPosts, ...postsToAdd]);
 
       if (isInitialLoad) {
         showSuccess("Postagens de introdução da Hive carregadas com sucesso!");
       }
       setLastUpdated(new Date());
 
-      onPostsChange?.(fetchedPosts);
+      onPostsChange?.(postsToAdd);
 
     } catch (error: any) {
       console.error("Erro ao buscar postagens de introdução da Hive:", error);
