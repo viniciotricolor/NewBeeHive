@@ -277,6 +277,10 @@ const UserProfilePage = () => {
                     <div className="flex items-center">
                       <ThumbsUp className="h-4 w-4 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
                     </div>
+                    {/* Adicionado o valor de pagamento pendente aqui */}
+                    <div className="flex items-center">
+                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                    </div>
                   </div>
                   <Button 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
