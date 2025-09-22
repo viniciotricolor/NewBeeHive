@@ -6,6 +6,11 @@ Bem-vindo ao NewBee Hive 🐝! Este é um explorador de posts da Hive Blockchain
 
 Nossa missão é simplificar a descoberta de novos talentos e histórias na Hive, especialmente para aqueles que estão começando sua jornada na blockchain.
 
+## Links Úteis
+
+*   **Site:** [https://newbeehive.vercel.app/](https://newbeehive.vercel.app/)
+*   **Repositório GitHub:** [https://github.com/viniciotricolor/NewBeeHive](https://github.com/viniciotricolor/NewBeeHive)
+
 ## Versão
 
 **Versão:** 1.0.0
