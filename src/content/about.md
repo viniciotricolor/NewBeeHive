@@ -17,7 +17,7 @@ Nossa missão é simplificar a descoberta de novos talentos e histórias na Hive
 
 ## Changelog
 
-### 1.0.0 - 29 de setembro de 2025
+### 1.0.0 - 19 de setembro de 2025
 *   Lançamento inicial do NewBee Hive 🐝.
 *   Funcionalidade de explorar posts de introdução (tag #introduceyourself).
 *   Busca de primeiro post por nome de usuário.
