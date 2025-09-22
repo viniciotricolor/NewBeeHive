@@ -1,13 +1,28 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Search as SearchIcon, ExternalLink } from "lucide-react";
-import { useHivePosts } from '@/hooks/useHivePosts';
-import { useUserFirstPost } from '@/hooks/useUserFirstPost';
 
-const StatsCards = () => {
-  const { posts } = useHivePosts({ postsPerLoad: 12 });
-  const { userFirstPost } = useUserFirstPost();
+interface Post {
+  title: string;
+  body: string;
+  created: string;
+  permlink: string;
+  author: string;
+  url: string;
+  replies: number;
+  active_votes: Array<{ percent: number }>;
+  json_metadata: string;
+  author_display_name?: string;
+  author_avatar_url?: string;
+  pending_payout_value: string;
+}
 
+interface StatsCardsProps {
+  posts: Post[];
+  userFirstPost: Post | null;
+}
+
+const StatsCards = ({ posts, userFirstPost }: StatsCardsProps) => {
   if (userFirstPost) return null; // Esconde stats durante busca de usuário específico
 
   const postsToDisplay = posts;

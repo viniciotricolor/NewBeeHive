@@ -89,17 +89,6 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       onPostsChange?.(fetchedPosts);
 
-      console.log("useHivePosts Debug:");
-      console.log("  isInitialLoad:", isInitialLoad);
-      console.log("  currentSortOption:", currentSortOption);
-      console.log("  startAuthor:", startAuthor);
-      console.log("  startPermlink:", startPermlink);
-      console.log("  rawPosts.length (from API):", rawPosts.length);
-      console.log("  fetchedPosts.length (processed):", fetchedPosts.length);
-      console.log("  postsPerLoad:", postsPerLoad);
-      console.log("  newHasMore (calculated):", newHasMore);
-      console.log("  current posts.length:", (isInitialLoad ? fetchedPosts : [...posts, ...fetchedPosts]).length);
-
     } catch (error: any) {
       console.error("Erro ao buscar postagens de introdução da Hive:", error);
       showError(`Falha ao carregar postagens de introdução da Hive: ${error.message}.`);

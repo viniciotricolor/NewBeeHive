@@ -9,8 +9,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
-import { useUserFirstPost } from '@/hooks/useUserFirstPost';
-import { useHivePosts } from '@/hooks/useHivePosts';
 
 interface Post {
   title: string;
@@ -26,13 +24,17 @@ interface Post {
   url: string;
 }
 
-const PostGrid = () => {
-  const { posts: hivePosts, loading: loadingHive } = useHivePosts({ postsPerLoad: 10 }); // Atualizado para 10
-  const { userFirstPost, loadingUserFirstPost } = useUserFirstPost();
+interface PostGridProps {
+  posts: Post[];
+  loadingHive: boolean;
+  userFirstPost: Post | null;
+  loadingUserFirstPost: boolean;
+  postsPerLoad: number;
+}
 
-  const postsToDisplay: Post[] = userFirstPost ? [userFirstPost] : hivePosts;
-  const isLoadingContent = loadingUserFirstPost || (loadingHive && hivePosts.length === 0);
-  const postsPerLoad = 10; // Atualizado para 10
+const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, postsPerLoad }: PostGridProps) => {
+  const postsToDisplay: Post[] = userFirstPost ? [userFirstPost] : posts;
+  const isLoadingContent = loadingUserFirstPost || (loadingHive && posts.length === 0);
 
   const navigate = useNavigate();
 

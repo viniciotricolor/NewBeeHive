@@ -13,9 +13,20 @@ import { useHivePosts } from '@/hooks/useHivePosts';
 import { useUserFirstPost } from '@/hooks/useUserFirstPost';
 
 const HiveUsersPage = () => {
-  const postsPerLoad = 10; // Alterado para 10 posts por carga
-  const { lastUpdated, handleRefresh: refreshHivePosts } = useHivePosts({ postsPerLoad });
-  const { userFirstPost, handleRefresh: refreshUserPost } = useUserFirstPost();
+  const postsPerLoad = 10;
+  const { 
+    posts: hivePosts, 
+    loading: loadingHive, 
+    loadingMore, 
+    hasMore, 
+    sortOption, 
+    setSortOption, 
+    lastUpdated, 
+    handleLoadMore, 
+    handleRefresh: refreshHivePosts 
+  } = useHivePosts({ postsPerLoad });
+  
+  const { userFirstPost, loadingUserFirstPost, usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, handleRefresh: refreshUserPost } = useUserFirstPost();
 
   const handleOverallRefresh = useCallback(() => {
     if (userFirstPost) {
@@ -55,10 +66,15 @@ const HiveUsersPage = () => {
           
           {/* Search and Controls */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <SearchBar />
+            <SearchBar 
+              usernameSearchTerm={usernameSearchTerm} 
+              setUsernameSearchTerm={setUsernameSearchTerm} 
+              handleSearchClick={handleSearchClick} 
+              loadingUserFirstPost={loadingUserFirstPost} 
+            />
             {!userFirstPost && (
               <>
-                <SortDropdown />
+                <SortDropdown sortOption={sortOption} setSortOption={setSortOption} />
                 <Button onClick={handleOverallRefresh} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                   <RefreshCw className="h-4 w-4" />
                   Atualizar
@@ -69,12 +85,30 @@ const HiveUsersPage = () => {
         </div>
 
         {/* Stats */}
-        <StatsCards />
+        <StatsCards posts={hivePosts} userFirstPost={userFirstPost} />
 
         {/* Content */}
-        <PostGrid />
-        <LoadMoreButton />
-        <EmptyState />
+        <PostGrid 
+          posts={hivePosts} 
+          loadingHive={loadingHive} 
+          userFirstPost={userFirstPost} 
+          loadingUserFirstPost={loadingUserFirstPost} 
+          postsPerLoad={postsPerLoad}
+        />
+        <LoadMoreButton 
+          handleLoadMore={handleLoadMore} 
+          loadingMore={loadingMore} 
+          hasMore={hasMore} 
+          posts={hivePosts} 
+          userFirstPost={userFirstPost} 
+        />
+        <EmptyState 
+          usernameSearchTerm={usernameSearchTerm} 
+          loadingUserFirstPost={loadingUserFirstPost} 
+          userFirstPost={userFirstPost} 
+          loadingHive={loadingHive} 
+          hivePosts={hivePosts} 
+        />
       </div>
     </div>
   );

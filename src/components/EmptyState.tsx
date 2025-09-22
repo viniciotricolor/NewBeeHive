@@ -1,12 +1,30 @@
 import React from 'react';
 import { User } from "lucide-react";
-import { useUserFirstPost } from '@/hooks/useUserFirstPost';
-import { useHivePosts } from '@/hooks/useHivePosts';
 
-const EmptyState = () => {
-  const { usernameSearchTerm, loadingUserFirstPost, userFirstPost } = useUserFirstPost();
-  const { loading: loadingHive, posts: hivePosts } = useHivePosts({ postsPerLoad: 12 });
+interface Post {
+  title: string;
+  body: string;
+  created: string;
+  permlink: string;
+  author: string;
+  url: string;
+  replies: number;
+  active_votes: Array<{ percent: number }>;
+  json_metadata: string;
+  author_display_name?: string;
+  author_avatar_url?: string;
+  pending_payout_value: string;
+}
 
+interface EmptyStateProps {
+  usernameSearchTerm: string;
+  loadingUserFirstPost: boolean;
+  userFirstPost: Post | null;
+  loadingHive: boolean;
+  hivePosts: Post[];
+}
+
+const EmptyState = ({ usernameSearchTerm, loadingUserFirstPost, userFirstPost, loadingHive, hivePosts }: EmptyStateProps) => {
   const isEmptyState = (userFirstPost ? 0 : hivePosts.length) === 0 && !loadingUserFirstPost && !loadingHive;
   const isSearchEmpty = isEmptyState && usernameSearchTerm.trim();
 

@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { Dispatch, SetStateAction } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, RefreshCw } from "lucide-react";
-import { useUserFirstPost } from '@/hooks/useUserFirstPost';
+// Removido o import de useUserFirstPost, pois as props agora vêm de cima.
 
-const SearchBar = () => {
-  const { usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, loadingUserFirstPost } = useUserFirstPost();
+interface SearchBarProps {
+  usernameSearchTerm: string;
+  setUsernameSearchTerm: Dispatch<SetStateAction<string>>;
+  handleSearchClick: () => void;
+  loadingUserFirstPost: boolean;
+}
 
+const SearchBar = ({ usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, loadingUserFirstPost }: SearchBarProps) => {
   return (
     <div className="relative w-full sm:w-96 flex">
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

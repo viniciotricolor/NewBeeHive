@@ -7,11 +7,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { useHivePosts } from '@/hooks/useHivePosts';
+import { SortOption } from '@/hooks/useHivePosts'; // Importar o tipo SortOption
 
-const SortDropdown = () => {
-  const { sortOption, setSortOption } = useHivePosts({ postsPerLoad: 12 });
+interface SortDropdownProps {
+  sortOption: SortOption;
+  setSortOption: (option: SortOption) => void;
+}
 
+const SortDropdown = ({ sortOption, setSortOption }: SortDropdownProps) => {
   const getSortOptionLabel = (option: string) => {
     switch (option) {
       case 'created': return 'Mais Recentes';
