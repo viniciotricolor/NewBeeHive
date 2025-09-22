@@ -77,7 +77,8 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       // compared to the requested limit (postsPerLoad + 1, before potential slicing)
       // If rawPosts.length was originally postsPerLoad + 1, and we sliced one, it means there are more.
       // If rawPosts.length (after slicing) is less than postsPerLoad, then there are no more.
-      setHasMore(fetchedPosts.length === postsPerLoad);
+      const newHasMore = fetchedPosts.length === postsPerLoad;
+      setHasMore(newHasMore);
 
       setPosts(prevPosts => isInitialLoad ? fetchedPosts : [...prevPosts, ...fetchedPosts]);
 
@@ -87,6 +88,18 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       setLastUpdated(new Date());
 
       onPostsChange?.(fetchedPosts);
+
+      console.log("useHivePosts Debug:");
+      console.log("  isInitialLoad:", isInitialLoad);
+      console.log("  currentSortOption:", currentSortOption);
+      console.log("  startAuthor:", startAuthor);
+      console.log("  startPermlink:", startPermlink);
+      console.log("  rawPosts.length (from API):", rawPosts.length);
+      console.log("  fetchedPosts.length (processed):", fetchedPosts.length);
+      console.log("  postsPerLoad:", postsPerLoad);
+      console.log("  newHasMore (calculated):", newHasMore);
+      console.log("  current posts.length:", (isInitialLoad ? fetchedPosts : [...posts, ...fetchedPosts]).length);
+
     } catch (error: any) {
       console.error("Erro ao buscar postagens de introdução da Hive:", error);
       showError(`Falha ao carregar postagens de introdução da Hive: ${error.message}.`);
@@ -98,7 +111,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption, postsPerLoad, onPostsChange]);
+  }, [sortOption, postsPerLoad, onPostsChange, posts]);
 
   const handleLoadMore = useCallback(() => {
     if (posts.length > 0 && hasMore && !loadingMore) {
