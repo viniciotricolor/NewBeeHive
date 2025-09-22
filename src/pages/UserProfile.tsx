@@ -44,14 +44,19 @@ const UserProfilePage = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfileAndPosts = useCallback(async () => {
-    if (!username) return;
+    const cleanUsername = username?.trim();
+    if (!cleanUsername || cleanUsername.length === 0) {
+      showError("Nome de usuário inválido. Por favor, forneça um nome de usuário válido.");
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
-      const accountData = await getAccounts({ names: [username] });
+      const accountData = await getAccounts({ names: [cleanUsername] });
 
-      let displayName = username;
-      let avatarUrl = `https://images.hive.blog/u/${username}/avatar`;
+      let displayName = cleanUsername;
+      let avatarUrl = `https://images.hive.blog/u/${cleanUsername}/avatar`;
       let about = "";
       let reputation = 25;
       let website: string | undefined;
@@ -76,10 +81,15 @@ const UserProfilePage = () => {
         } catch (e) {
           console.warn("Could not parse user metadata:", e);
         }
+      } else {
+        showError(`Usuário @${cleanUsername} não encontrado na Hive.`);
+        setProfile(null);
+        setLoading(false);
+        return;
       }
 
       // Correção: Usar tag: '' e start_author: username para buscar posts do blog do usuário
-      const postsData = await getDiscussionsByBlog({ tag: '', start_author: username, limit: 20 });
+      const postsData = await getDiscussionsByBlog({ tag: '', start_author: cleanUsername, limit: 20 });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
@@ -95,7 +105,7 @@ const UserProfilePage = () => {
       }));
 
       setProfile({
-        username: username,
+        username: cleanUsername,
         display_name: displayName,
         avatar_url: avatarUrl,
         about: about,
@@ -106,10 +116,10 @@ const UserProfilePage = () => {
         instagram: instagram,
         posts: userPosts,
       });
-      showSuccess(`Posts de @${username} carregados com sucesso!`);
+      showSuccess(`Posts de @${cleanUsername} carregados com sucesso!`);
     } catch (error: any) {
-      console.error(`Erro ao buscar perfil e posts de @${username}:`, error);
-      showError(`Falha ao carregar perfil e posts de @${username}: ${error.message}.`);
+      console.error(`Erro ao buscar perfil e posts de @${cleanUsername}:`, error);
+      showError(`Falha ao carregar perfil e posts de @${cleanUsername}: ${error.message}.`);
       setProfile(null);
     } finally {
       setLoading(false);
