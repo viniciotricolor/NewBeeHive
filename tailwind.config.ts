@@ -18,6 +18,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "sans-serif"], // Adicionando Inter como a fonte sans-serif padrão
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

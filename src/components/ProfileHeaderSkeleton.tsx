@@ -1,5 +1,4 @@
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card"; // Removido CardContent
 import { Skeleton } from "@/components/ui/skeleton";
 
 const ProfileHeaderSkeleton = () => {

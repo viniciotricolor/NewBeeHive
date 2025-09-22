@@ -1,4 +1,4 @@
-import { HIVE_API_NODE, INTRODUCE_YOURSELF_TAG } from '@/config/constants';
+import { HIVE_API_NODE } from '@/config/constants'; // Removido INTRODUCE_YOURSELF_TAG
 
 export interface PostParams {
   tag: string;

@@ -1,3 +1,18 @@
+export interface RawHivePost {
+  id: number;
+  author: string;
+  permlink: string;
+  title: string;
+  body: string;
+  created: string;
+  children: number; // Number of replies
+  active_votes: Array<{ percent: number }>;
+  json_metadata: string;
+  pending_payout_value: string;
+  depth?: number; // For comments
+  reputation?: number; // For accounts
+}
+
 export interface Post {
   title: string;
   body: string;

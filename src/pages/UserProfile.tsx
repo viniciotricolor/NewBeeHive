@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,12 @@ import { getAccounts, getDiscussionsByBlog, formatReputation } from '@/services/
 import ProfileHeaderSkeleton from '@/components/ProfileHeaderSkeleton';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Badge } from "@/components/ui/badge";
-import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
-import remarkGfm from 'remark-gfm'; // Importar remarkGfm
-import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
-import { formatDate } from '@/utils/dateUtils'; // Importar formatDate centralizado
-import { USER_PROFILE_POSTS_LIMIT } from '@/config/constants'; // Importar constante
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import { Post } from '@/types/hive';
+import { formatDate } from '@/utils/dateUtils';
+import { USER_PROFILE_POSTS_LIMIT } from '@/config/constants';
 
 interface UserProfileData {
   username: string;
@@ -40,7 +40,7 @@ const UserProfilePage = () => {
     const cleanUsername = username?.trim();
     if (!cleanUsername || cleanUsername.length === 0) {
       showError("Nome de usuário inválido. Por favor, forneça um nome de usuário válido.");
-      setProfile(null); // Garante que o perfil seja nulo para um username inválido
+      setProfile(null);
       setLoading(false);
       return;
     }
@@ -82,12 +82,11 @@ const UserProfilePage = () => {
         return;
       }
 
-      // Usar constante para o limite de posts
       const postsData = await getDiscussionsByBlog({ tag: cleanUsername, limit: USER_PROFILE_POSTS_LIMIT });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
-        body: post.body, // Manter o corpo completo para ReactMarkdown
+        body: post.body,
         created: post.created,
         permlink: post.permlink,
         author: post.author,
@@ -263,7 +262,7 @@ const UserProfilePage = () => {
                   <div className="prose dark:prose-invert max-w-none text-card-foreground mb-4">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
+                      rehypePlugins={[rehypeRaw]}
                       components={{
                         a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                       }}

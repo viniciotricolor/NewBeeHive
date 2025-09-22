@@ -1,6 +1,6 @@
-import { Post } from '@/types/hive';
+import { Post, RawHivePost } from '@/types/hive';
 
-export const processRawPost = async (post: any): Promise<Post> => {
+export const processRawPost = async (post: RawHivePost): Promise<Post> => {
   let authorDisplayName = post.author;
   let authorAvatarUrl = `https://images.hive.blog/u/${post.author}/avatar`;
 

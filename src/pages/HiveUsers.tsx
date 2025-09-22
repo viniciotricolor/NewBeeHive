@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Calendar, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react"; // Removido Calendar
 import SearchBar from '@/components/SearchBar';
 import SortDropdown from '@/components/SortDropdown';
 import StatsCards from '@/components/StatsCards';
@@ -21,12 +21,12 @@ const HiveUsersPage = () => {
     loading: loadingHive, 
     loadingMore, 
     hasMore, 
-    sortOption, // Agora desestruturado do retorno de useHivePosts
-    setSortOption, // Agora desestruturado do retorno de useHivePosts
+    sortOption, 
+    setSortOption, 
     lastUpdated, 
     handleLoadMore, 
     handleRefresh: refreshHivePosts 
-  } = useHivePosts({ postsPerLoad }); // Removido: sortOption das props passadas para useHivePosts
+  } = useHivePosts({ postsPerLoad });
   
   const { userFirstPost, loadingUserFirstPost, usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, handleRefresh: refreshUserPost } = useUserFirstPost();
 

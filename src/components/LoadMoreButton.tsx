@@ -1,6 +1,5 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { Post } from '@/types/hive';
 
 interface LoadMoreButtonProps {
   handleLoadMore: () => void;

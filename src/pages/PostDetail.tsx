@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,22 +11,12 @@ import { getContent, getAccounts, getPostComments, formatReputation } from '@/se
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
-import { formatDate } from '@/utils/dateUtils'; // Importar formatDate centralizado
+import rehypeRaw from 'rehype-raw';
+import { Post, RawHivePost } from '@/types/hive'; // Importar RawHivePost
+import { formatDate } from '@/utils/dateUtils';
 
-interface Comment {
+interface Comment extends Post { // Estende Post para reusar campos comuns
   id: number;
-  author: string;
-  permlink: string;
-  body: string;
-  created: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  json_metadata: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  pending_payout_value: string;
   depth: number;
   author_reputation?: number;
   raw_author_reputation?: number;
@@ -40,7 +30,7 @@ const PostDetail = () => {
   const [loadingPost, setLoadingPost] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const processRawComment = async (comment: any, authorReputationMap: Map<string, { formatted: number, raw: number }>): Promise<Comment> => {
+  const processRawComment = async (comment: RawHivePost, authorReputationMap: Map<string, { formatted: number, raw: number }>): Promise<Comment> => {
     let authorDisplayName = comment.author;
     let authorAvatarUrl = `https://images.hive.blog/u/${comment.author}/avatar`;
 
@@ -72,9 +62,11 @@ const PostDetail = () => {
       author_display_name: authorDisplayName,
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: comment.pending_payout_value,
-      depth: comment.depth,
+      depth: comment.depth || 0, // Ensure depth is always a number
       author_reputation: reputationInfo?.formatted,
       raw_author_reputation: reputationInfo?.raw,
+      title: comment.title, // Adicionado para satisfazer a interface Post
+      url: `https://hive.blog/@${comment.author}/${comment.permlink}`, // Adicionado para satisfazer a interface Post
     };
   };
 
@@ -87,7 +79,7 @@ const PostDetail = () => {
 
     setLoadingPost(true);
     try {
-      const rawPost = await getContent({ author, permlink });
+      const rawPost: RawHivePost = await getContent({ author, permlink });
 
       if (!rawPost || rawPost.id === 0) {
         showError("Postagem não encontrada.");
@@ -147,9 +139,9 @@ const PostDetail = () => {
 
     setLoadingComments(true);
     try {
-      const rawComments = await getPostComments({ author, permlink });
+      const rawComments: RawHivePost[] = await getPostComments({ author, permlink });
 
-      const uniqueAuthors: string[] = Array.from(new Set(rawComments.map(comment => comment.author)));
+      const uniqueAuthors: string[] = Array.from(new Set(rawComments.map((comment: RawHivePost) => comment.author)));
 
       const accountsData = await getAccounts({ names: uniqueAuthors });
       const authorReputationMap = new Map<string, { formatted: number, raw: number }>();
@@ -161,7 +153,7 @@ const PostDetail = () => {
       });
 
       const processedComments = await Promise.all(
-        rawComments.map(comment => processRawComment(comment, authorReputationMap))
+        rawComments.map((comment: RawHivePost) => processRawComment(comment, authorReputationMap))
       );
 
       const filteredComments = processedComments.filter(
@@ -241,7 +233,7 @@ const PostDetail = () => {
             <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
+                rehypePlugins={[rehypeRaw]}
                 components={{
                   a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                 }}
@@ -306,7 +298,7 @@ const PostDetail = () => {
                         <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
+                            rehypePlugins={[rehypeRaw]}
                             components={{
                               a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                             }}

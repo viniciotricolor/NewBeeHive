@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
-import { processRawPost } from '@/utils/postUtils'; // Adicionado: Importação de processRawPost
+import { processRawPost } from '@/utils/postUtils';
 import { Post } from '@/types/hive';
-import { POSTS_PER_LOAD, INTRODUCE_YOURSELF_TAG } from '@/config/constants';
+import { INTRODUCE_YOURSELF_TAG } from '@/config/constants'; // Removido POSTS_PER_LOAD
 
 export type SortOption = 'created' | 'hot' | 'trending';
 
@@ -17,7 +17,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>('created'); // sortOption é gerenciado internamente
+  const [sortOption, setSortOption] = useState<SortOption>('created');
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
@@ -119,8 +119,8 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
     loading,
     loadingMore,
     loadingRefresh,
-    sortOption, // Agora retornado
-    setSortOption, // Agora retornado
+    sortOption,
+    setSortOption,
     hasMore,
     lastUpdated,
     fetchPosts,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import rehypeRaw from 'rehype-raw';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Post } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
-import { motion } from 'framer-motion'; // Importar motion do framer-motion
+import { motion } from 'framer-motion';
 
 interface PostGridProps {
   posts: Post[];
@@ -58,7 +57,7 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
             key={post.permlink}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }} // Atraso para efeito cascata
+            transition={{ duration: 0.3, delay: index * 0.05 }}
           >
             <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card border-border">
               <CardHeader className="pb-4">

@@ -1,7 +1,6 @@
-import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Search as SearchIcon, ExternalLink } from "lucide-react";
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { Post } from '@/types/hive';
 
 interface StatsCardsProps {
   posts: Post[];

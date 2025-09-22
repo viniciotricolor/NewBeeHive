@@ -1,6 +1,5 @@
-import React from 'react';
 import { User } from "lucide-react";
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { Post } from '@/types/hive';
 
 interface EmptyStateProps {
   usernameSearchTerm: string;

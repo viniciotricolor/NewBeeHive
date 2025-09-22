@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import aboutMarkdown from '@/content/about.md?raw'; // Importa o conteúdo Markdown como string
+import aboutMarkdown from '@/content/about.md?raw';
 
 const AboutPage = () => {
   const [markdown, setMarkdown] = useState('');

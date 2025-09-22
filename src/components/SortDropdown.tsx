@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { SortOption } from '@/hooks/useHivePosts'; // Importar o tipo SortOption
+import { SortOption } from '@/hooks/useHivePosts';
 
 interface SortDropdownProps {
   sortOption: SortOption;
