@@ -1,6 +1,6 @@
-const HIVE_API_NODE = 'https://api.hive.blog'; // Changed API node to a more common one
+import { HIVE_API_NODE, INTRODUCE_YOURSELF_TAG } from '@/config/constants';
 
-export interface PostParams { // Adicionado 'export' aqui
+export interface PostParams {
   tag: string;
   limit: number;
   start_author?: string;
@@ -46,56 +46,35 @@ export const callHiveApi = async (method: string, params: any[], id: number = 1)
   return data.result;
 };
 
-export const getDiscussionsByCreated = async (params: PostParams) => {
-  const query: { tag: string; limit: number; start_author?: string; start_permlink?: string } = {
+// Função auxiliar para construir os parâmetros de discussão
+const buildDiscussionParams = (params: PostParams) => {
+  const cleanedParams: { [key: string]: any } = {
     tag: params.tag,
     limit: params.limit,
-    start_author: params.start_author || undefined, // Explicitly undefined if empty
-    start_permlink: params.start_permlink || undefined, // Explicitly undefined if empty
   };
-  return callHiveApi('condenser_api.get_discussions_by_created', [query]);
+  if (params.start_author) {
+    cleanedParams.start_author = params.start_author;
+  }
+  if (params.start_permlink) {
+    cleanedParams.start_permlink = params.start_permlink;
+  }
+  return [cleanedParams];
+};
+
+export const getDiscussionsByCreated = async (params: PostParams) => {
+  return callHiveApi('condenser_api.get_discussions_by_created', buildDiscussionParams(params));
 };
 
 export const getDiscussionsByHot = async (params: PostParams) => {
-  const cleanedParams: { [key: string]: any } = {
-    tag: params.tag,
-    limit: params.limit,
-  };
-  if (params.start_author) {
-    cleanedParams.start_author = params.start_author;
-  }
-  if (params.start_permlink) {
-    cleanedParams.start_permlink = params.start_permlink;
-  }
-  return callHiveApi('condenser_api.get_discussions_by_hot', [cleanedParams]);
+  return callHiveApi('condenser_api.get_discussions_by_hot', buildDiscussionParams(params));
 };
 
 export const getDiscussionsByTrending = async (params: PostParams) => {
-  const cleanedParams: { [key: string]: any } = {
-    tag: params.tag,
-    limit: params.limit,
-  };
-  if (params.start_author) {
-    cleanedParams.start_author = params.start_author;
-  }
-  if (params.start_permlink) {
-    cleanedParams.start_permlink = params.start_permlink;
-  }
-  return callHiveApi('condenser_api.get_discussions_by_trending', [cleanedParams]);
+  return callHiveApi('condenser_api.get_discussions_by_trending', buildDiscussionParams(params));
 };
 
 export const getDiscussionsByBlog = async (params: PostParams) => {
-  const cleanedParams: { [key: string]: any } = {
-    tag: params.tag,
-    limit: params.limit,
-  };
-  if (params.start_author) {
-    cleanedParams.start_author = params.start_author;
-  }
-  if (params.start_permlink) {
-    cleanedParams.start_permlink = params.start_permlink;
-  }
-  return callHiveApi('condenser_api.get_discussions_by_blog', [cleanedParams]);
+  return callHiveApi('condenser_api.get_discussions_by_blog', buildDiscussionParams(params));
 };
 
 export const getAccounts = async (params: AccountParams) => {
@@ -107,11 +86,9 @@ export const getContent = async (params: ContentParams) => {
 };
 
 export const getPostComments = async (params: CommentRepliesParams) => {
-  // get_content_replies takes parent_author and parent_permlink
   return callHiveApi('condenser_api.get_content_replies', [params.author, params.permlink]);
 };
 
-// Utility to convert raw reputation to a more readable format
 export const formatReputation = (rep: number) => {
   if (rep === 0) return 25;
   const log10 = Math.log10(Math.abs(rep));

@@ -1,19 +1,6 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  pending_payout_value: string;
-  url: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
 
 interface LoadMoreButtonProps {
   handleLoadMore: () => void;

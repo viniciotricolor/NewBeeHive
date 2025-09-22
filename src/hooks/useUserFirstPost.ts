@@ -2,21 +2,8 @@ import { useState, useCallback } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByBlog, PostParams } from '@/services/hive';
 import { processRawPost } from '@/utils/postUtils';
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  url: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  json_metadata: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  pending_payout_value: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { USER_FIRST_POST_MAX_PAGES, USER_FIRST_POST_POSTS_PER_PAGE } from '@/config/constants'; // Importar constantes
 
 export const useUserFirstPost = () => {
   const [userFirstPost, setUserFirstPost] = useState<Post | null>(null);
@@ -37,8 +24,9 @@ export const useUserFirstPost = () => {
       let currentStartAuthor = '';
       let currentStartPermlink = '';
       let page = 0;
-      const maxPages = 5;
-      const postsPerPage = 100;
+      // Usar constantes
+      const maxPages = USER_FIRST_POST_MAX_PAGES;
+      const postsPerPage = USER_FIRST_POST_POSTS_PER_PAGE;
 
       while (page < maxPages) {
         const params: PostParams = {

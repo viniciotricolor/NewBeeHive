@@ -9,20 +9,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  pending_payout_value: string;
-  url: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { formatDate } from '@/utils/dateUtils'; // Importar formatDate centralizado
 
 interface PostGridProps {
   posts: Post[];
@@ -37,17 +25,6 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
   const isLoadingContent = loadingUserFirstPost || (loadingHive && posts.length === 0);
 
   const navigate = useNavigate();
-
-  const formatDate = (dateInput: string | Date) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const truncateBody = (body: string, maxLength: number = 250) => {
     if (body.length <= maxLength) {

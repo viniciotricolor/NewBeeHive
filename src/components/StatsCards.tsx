@@ -1,21 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Search as SearchIcon, ExternalLink } from "lucide-react";
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  url: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  json_metadata: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  pending_payout_value: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
 
 interface StatsCardsProps {
   posts: Post[];

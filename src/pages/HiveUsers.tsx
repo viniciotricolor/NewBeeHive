@@ -11,20 +11,22 @@ import LoadMoreButton from '@/components/LoadMoreButton';
 import EmptyState from '@/components/EmptyState';
 import { useHivePosts } from '@/hooks/useHivePosts';
 import { useUserFirstPost } from '@/hooks/useUserFirstPost';
+import { formatDate } from '@/utils/dateUtils';
+import { POSTS_PER_LOAD } from '@/config/constants';
 
 const HiveUsersPage = () => {
-  const postsPerLoad = 10;
+  const postsPerLoad = POSTS_PER_LOAD;
   const { 
     posts: hivePosts, 
     loading: loadingHive, 
     loadingMore, 
     hasMore, 
-    sortOption, 
-    setSortOption, 
+    sortOption, // Agora desestruturado do retorno de useHivePosts
+    setSortOption, // Agora desestruturado do retorno de useHivePosts
     lastUpdated, 
     handleLoadMore, 
     handleRefresh: refreshHivePosts 
-  } = useHivePosts({ postsPerLoad });
+  } = useHivePosts({ postsPerLoad }); // Removido: sortOption das props passadas para useHivePosts
   
   const { userFirstPost, loadingUserFirstPost, usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, handleRefresh: refreshUserPost } = useUserFirstPost();
 
@@ -35,17 +37,6 @@ const HiveUsersPage = () => {
       refreshHivePosts();
     }
   }, [userFirstPost, refreshUserPost, refreshHivePosts]);
-
-  const formatDate = (dateInput: string | Date) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background p-4">

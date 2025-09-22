@@ -12,21 +12,8 @@ import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  url: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  json_metadata: string;
-  author_display_name?: string;
-  author_avatar_url?: string;
-  pending_payout_value: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { formatDate } from '@/utils/dateUtils'; // Importar formatDate centralizado
 
 interface Comment {
   id: number;
@@ -195,17 +182,6 @@ const PostDetail = () => {
     fetchPostDetail();
     fetchComments();
   }, [fetchPostDetail, fetchComments]);
-
-  const formatDate = (dateInput: string | Date) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (loadingPost) {
     return (

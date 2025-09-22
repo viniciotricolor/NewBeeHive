@@ -14,19 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
 import remarkGfm from 'remark-gfm'; // Importar remarkGfm
 import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
-
-interface Post {
-  title: string;
-  body: string;
-  created: string;
-  permlink: string;
-  author: string;
-  url: string;
-  replies: number;
-  active_votes: Array<{ percent: number }>;
-  json_metadata: string;
-  author_avatar_url?: string;
-}
+import { Post } from '@/types/hive'; // Importar a interface Post centralizada
+import { formatDate } from '@/utils/dateUtils'; // Importar formatDate centralizado
+import { USER_PROFILE_POSTS_LIMIT } from '@/config/constants'; // Importar constante
 
 interface UserProfileData {
   username: string;
@@ -92,7 +82,8 @@ const UserProfilePage = () => {
         return;
       }
 
-      const postsData = await getDiscussionsByBlog({ tag: cleanUsername, limit: 20 });
+      // Usar constante para o limite de posts
+      const postsData = await getDiscussionsByBlog({ tag: cleanUsername, limit: USER_PROFILE_POSTS_LIMIT });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
@@ -105,6 +96,7 @@ const UserProfilePage = () => {
         active_votes: post.active_votes,
         json_metadata: post.json_metadata,
         author_avatar_url: avatarUrl,
+        pending_payout_value: post.pending_payout_value,
       }));
 
       setProfile({
@@ -132,16 +124,6 @@ const UserProfilePage = () => {
   useEffect(() => {
     fetchUserProfileAndPosts();
   }, [fetchUserProfileAndPosts]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const getVoteWeight = (votes: Array<{ percent: number }>) => {
     return votes.reduce((sum, vote) => sum + vote.percent, 0) / 100;

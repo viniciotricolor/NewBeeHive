@@ -1,21 +1,23 @@
 import { useState, useCallback, useEffect } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByCreated, getDiscussionsByHot, getDiscussionsByTrending, PostParams } from '@/services/hive';
-import { processRawPost } from '@/utils/postUtils';
+import { processRawPost } from '@/utils/postUtils'; // Adicionado: Importação de processRawPost
+import { Post } from '@/types/hive';
+import { POSTS_PER_LOAD, INTRODUCE_YOURSELF_TAG } from '@/config/constants';
 
 export type SortOption = 'created' | 'hot' | 'trending';
 
 interface UseHivePostsProps {
   postsPerLoad: number;
-  onPostsChange?: (posts: any[]) => void;
+  onPostsChange?: (posts: Post[]) => void;
 }
 
 export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps) => {
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingRefresh, setLoadingRefresh] = useState(false);
-  const [sortOption, setSortOption] = useState<SortOption>('created');
+  const [sortOption, setSortOption] = useState<SortOption>('created'); // sortOption é gerenciado internamente
   const [hasMore, setHasMore] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
@@ -28,14 +30,14 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
     if (isInitialLoad) {
       setLoading(true);
       setPosts([]);
-      setHasMore(true); // Reset hasMore for initial load
+      setHasMore(true);
     } else {
       setLoadingMore(true);
     }
 
     try {
       let discussionMethod;
-      const tagToUse = 'introduceyourself';
+      const tagToUse = INTRODUCE_YOURSELF_TAG;
 
       switch (currentSortOption) {
         case 'hot':
@@ -52,7 +54,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       const params: PostParams = {
         tag: tagToUse,
-        limit: postsPerLoad + 1 // Request one extra to check if there's more
+        limit: postsPerLoad + 1
       };
 
       if (startAuthor && startPermlink) {
@@ -62,10 +64,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
 
       let rawPosts = await discussionMethod(params);
       
-      // If loading more, and the API returned the starting post, remove it.
-      // This is a common pattern for Hive API pagination where the start_author/permlink is included.
       if (!isInitialLoad && startAuthor && startPermlink && rawPosts.length > 0) {
-        // Only slice if the first post returned is indeed the one we started from
         if (rawPosts[0].author === startAuthor && rawPosts[0].permlink === startPermlink) {
           rawPosts = rawPosts.slice(1);
         }
@@ -73,10 +72,6 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       
       const fetchedPosts = await Promise.all(rawPosts.map(processRawPost));
       
-      // Determine if there are more posts based on the number of posts received
-      // compared to the requested limit (postsPerLoad + 1, before potential slicing)
-      // If rawPosts.length was originally postsPerLoad + 1, and we sliced one, it means there are more.
-      // If rawPosts.length (after slicing) is less than postsPerLoad, then there are no more.
       const newHasMore = fetchedPosts.length === postsPerLoad;
       setHasMore(newHasMore);
 
@@ -100,7 +95,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption, postsPerLoad, onPostsChange]); // 'posts' removido daqui
+  }, [sortOption, postsPerLoad, onPostsChange]);
 
   const handleLoadMore = useCallback(() => {
     if (posts.length > 0 && hasMore && !loadingMore) {
@@ -124,8 +119,8 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
     loading,
     loadingMore,
     loadingRefresh,
-    sortOption,
-    setSortOption,
+    sortOption, // Agora retornado
+    setSortOption, // Agora retornado
     hasMore,
     lastUpdated,
     fetchPosts,
