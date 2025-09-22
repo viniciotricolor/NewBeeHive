@@ -100,7 +100,7 @@ export const useHivePosts = ({ postsPerLoad, onPostsChange }: UseHivePostsProps)
       setLoadingMore(false);
       setLoadingRefresh(false);
     }
-  }, [sortOption, postsPerLoad, onPostsChange, posts]);
+  }, [sortOption, postsPerLoad, onPostsChange]); // 'posts' removido daqui
 
   const handleLoadMore = useCallback(() => {
     if (posts.length > 0 && hasMore && !loadingMore) {
