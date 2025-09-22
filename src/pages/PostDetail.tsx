@@ -11,6 +11,7 @@ import { getContent, getAccounts, getPostComments, formatReputation } from '@/se
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
 
 interface Post {
   title: string;
@@ -264,6 +265,7 @@ const PostDetail = () => {
             <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
                 components={{
                   a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                 }}
@@ -328,6 +330,7 @@ const PostDetail = () => {
                         <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
                             components={{
                               a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                             }}

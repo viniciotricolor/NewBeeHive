@@ -11,6 +11,9 @@ import { getAccounts, getDiscussionsByBlog, formatReputation } from '@/services/
 import ProfileHeaderSkeleton from '@/components/ProfileHeaderSkeleton';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Badge } from "@/components/ui/badge";
+import ReactMarkdown from 'react-markdown'; // Importar ReactMarkdown
+import remarkGfm from 'remark-gfm'; // Importar remarkGfm
+import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
 
 interface Post {
   title: string;
@@ -89,12 +92,11 @@ const UserProfilePage = () => {
         return;
       }
 
-      // CORREÇÃO AQUI: Usar 'cleanUsername' como 'tag' para buscar posts do blog do usuário
       const postsData = await getDiscussionsByBlog({ tag: cleanUsername, limit: 20 });
 
       const userPosts: Post[] = postsData.map((post: any) => ({
         title: post.title,
-        body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
+        body: post.body, // Manter o corpo completo para ReactMarkdown
         created: post.created,
         permlink: post.permlink,
         author: post.author,
@@ -276,7 +278,17 @@ const UserProfilePage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-card-foreground mb-4">{post.body}</p>
+                  <div className="prose dark:prose-invert max-w-none text-card-foreground mb-4">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
+                      components={{
+                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                      }}
+                    >
+                      {post.body}
+                    </ReactMarkdown>
+                  </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                     <div className="flex items-center">
                       <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}

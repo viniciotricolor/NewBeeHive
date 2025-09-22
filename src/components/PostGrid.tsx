@@ -7,6 +7,7 @@ import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User } from "lucide-re
 import { Link, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw'; // Importar rehypeRaw para HTML bruto
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { useUserFirstPost } from '@/hooks/useUserFirstPost';
 import { useHivePosts } from '@/hooks/useHivePosts';
@@ -76,6 +77,7 @@ const PostGrid = () => {
             <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]} // Adicionar rehypeRaw aqui
                 components={{
                   a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
                 }}

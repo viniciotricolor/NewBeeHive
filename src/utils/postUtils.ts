@@ -33,7 +33,7 @@ export const processRawPost = async (post: any): Promise<Post> => {
 
   return {
     title: post.title,
-    body: post.body.substring(0, 150) + (post.body.length > 150 ? '...' : ''),
+    body: post.body, // Manter o corpo completo para ReactMarkdown
     created: post.created,
     permlink: post.permlink,
     author: post.author,
