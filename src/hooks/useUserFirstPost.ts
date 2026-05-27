@@ -2,15 +2,15 @@ import { useState, useCallback } from 'react';
 import { showSuccess, showError } from '@/utils/toast';
 import { getDiscussionsByBlog, PostParams } from '@/services/hive';
 import { processRawPost } from '@/utils/postUtils';
-import { Post } from '@/types/hive'; // Importar a interface Post centralizada
-import { USER_FIRST_POST_MAX_PAGES, USER_FIRST_POST_POSTS_PER_PAGE } from '@/config/constants'; // Importar constantes
+import { Post, RawHivePost } from '@/types/hive';
+import { USER_FIRST_POST_MAX_PAGES, USER_FIRST_POST_POSTS_PER_PAGE } from '@/config/constants';
 
 export const useUserFirstPost = () => {
   const [userFirstPost, setUserFirstPost] = useState<Post | null>(null);
   const [loadingUserFirstPost, setLoadingUserFirstPost] = useState(false);
   const [usernameSearchTerm, setUsernameSearchTerm] = useState('');
 
-  const fetchUserFirstPost = useCallback(async (username: string) => {
+  const fetchUserIntroductionPost = useCallback(async (username: string) => {
     if (!username) {
       setUserFirstPost(null);
       return;
@@ -20,11 +20,10 @@ export const useUserFirstPost = () => {
     setUserFirstPost(null);
 
     try {
-      let allPosts: any[] = [];
+      let allPosts: RawHivePost[] = [];
       let currentStartAuthor = '';
       let currentStartPermlink = '';
       let page = 0;
-      // Usar constantes
       const maxPages = USER_FIRST_POST_MAX_PAGES;
       const postsPerPage = USER_FIRST_POST_POSTS_PER_PAGE;
 
@@ -63,15 +62,41 @@ export const useUserFirstPost = () => {
         return;
       }
 
-      const sortedPosts = [...allPosts].sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
-      const firstPost = sortedPosts[0];
+      // Procurar o primeiro post que contenha a tag #introduceyourself
+      let introductionPost: RawHivePost | null = null;
 
-      const processedPost = await processRawPost(firstPost);
+      for (const post of allPosts) {
+        try {
+          const metadata = JSON.parse(post.json_metadata);
+          const tags: string[] = metadata.tags || [];
+          if (tags.includes('introduceyourself')) {
+            introductionPost = post;
+            break;
+          }
+        } catch (e) {
+          // Ignorar posts com metadados inválidos
+          continue;
+        }
+      }
+
+      // Se não achou com a tag, pegar o post mais antigo (fallback)
+      if (!introductionPost) {
+        const sorted = [...allPosts].sort(
+          (a, b) => new Date(a.created).getTime() - new Date(b.created).getTime()
+        );
+        introductionPost = sorted[0];
+      }
+
+      const processedPost = await processRawPost(introductionPost);
       setUserFirstPost(processedPost);
-      showSuccess(`Primeiro post de @${username} encontrado! (Buscado entre ${allPosts.length} posts)`);
+      showSuccess(
+        `Post de introdução de @${username} encontrado! (Buscado entre ${allPosts.length} posts)`
+      );
     } catch (error: any) {
-      console.error("Erro ao buscar primeiro post do usuário:", error);
-      showError(`Falha ao buscar primeiro post: ${error.message}. Verifique se o usuário existe na Hive.`);
+      console.error('Erro ao buscar post de introdução do usuário:', error);
+      showError(
+        `Falha ao buscar post: ${error.message}. Verifique se o usuário existe na Hive.`
+      );
     } finally {
       setLoadingUserFirstPost(false);
     }
@@ -79,17 +104,17 @@ export const useUserFirstPost = () => {
 
   const handleSearchClick = useCallback(() => {
     if (usernameSearchTerm.trim()) {
-      fetchUserFirstPost(usernameSearchTerm.trim());
+      fetchUserIntroductionPost(usernameSearchTerm.trim());
     } else {
       setUserFirstPost(null);
     }
-  }, [usernameSearchTerm, fetchUserFirstPost]);
+  }, [usernameSearchTerm, fetchUserIntroductionPost]);
 
   const handleRefresh = useCallback(() => {
     if (usernameSearchTerm.trim()) {
-      fetchUserFirstPost(usernameSearchTerm.trim());
+      fetchUserIntroductionPost(usernameSearchTerm.trim());
     }
-  }, [usernameSearchTerm, fetchUserFirstPost]);
+  }, [usernameSearchTerm, fetchUserIntroductionPost]);
 
   const clearUserFirstPost = useCallback(() => {
     setUserFirstPost(null);

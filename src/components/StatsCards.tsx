@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Users, ThumbsUp } from "lucide-react";
 import { Post } from '@/types/hive';
+import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
 
 interface StatsCardsProps {
   posts: Post[];
@@ -12,11 +13,8 @@ const StatsCards = ({ posts, userFirstPost }: StatsCardsProps) => {
 
   const postsToDisplay = posts;
   const uniqueAuthors = new Set(postsToDisplay.map(p => p.author)).size;
-  const totalVotes = postsToDisplay.reduce((sum, p) => sum + p.active_votes.length, 0);
-  const totalPayout = postsToDisplay.reduce((sum, p) => {
-    const val = parseFloat(p.pending_payout_value?.replace(' HBD', '') || '0');
-    return sum + (isNaN(val) ? 0 : val);
-  }, 0);
+  const totalVotes = postsToDisplay.reduce((sum, p) => sum + getUpvoteCount(p.active_votes), 0);
+  const totalPayout = postsToDisplay.reduce((sum, p) => sum + getTotalPayout(p), 0);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -49,7 +47,7 @@ const StatsCards = ({ posts, userFirstPost }: StatsCardsProps) => {
           </div>
           <div>
             <p className="text-2xl font-bold text-foreground">{totalVotes}</p>
-            <p className="text-sm text-muted-foreground">Votos totais · ${totalPayout.toFixed(2)} HBD</p>
+            <p className="text-sm text-muted-foreground">Votos totais · {formatPayout(totalPayout)}</p>
           </div>
         </CardContent>
       </Card>

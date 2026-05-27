@@ -17,6 +17,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Post } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
+import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
 import { USER_PROFILE_POSTS_LIMIT } from '@/config/constants';
 
 interface UserProfileData {
@@ -97,6 +98,8 @@ const UserProfilePage = () => {
         json_metadata: post.json_metadata,
         author_avatar_url: avatarUrl,
         pending_payout_value: post.pending_payout_value,
+        total_payout_value: post.total_payout_value,
+        curator_payout_value: post.curator_payout_value,
       }));
 
       setProfile({
@@ -299,10 +302,10 @@ const UserProfilePage = () => {
                         <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}
                       </div>
                       <div className="flex items-center">
-                        <ThumbsUp className="h-4 w-4 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                        <ThumbsUp className="h-4 w-4 mr-1" /> {getUpvoteCount(post.active_votes)}
                       </div>
                       <div className="flex items-center">
-                        <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                        <span className="font-bold text-green-600">{formatPayout(getTotalPayout(post))}</span>
                       </div>
                     </div>
                     <Button 

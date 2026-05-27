@@ -5,12 +5,14 @@ export interface RawHivePost {
   title: string;
   body: string;
   created: string;
-  children: number; // Number of replies
-  active_votes: Array<{ percent: number }>;
+  children: number;
+  active_votes: Array<{ percent: number; voter?: string; rshares?: number }>;
   json_metadata: string;
   pending_payout_value: string;
-  depth?: number; // For comments
-  reputation?: number; // For accounts
+  total_payout_value: string;
+  curator_payout_value: string;
+  depth?: number;
+  reputation?: number;
 }
 
 export interface Post {
@@ -21,9 +23,11 @@ export interface Post {
   author: string;
   url: string;
   replies: number;
-  active_votes: Array<{ percent: number }>;
+  active_votes: Array<{ percent: number; voter?: string; rshares?: number }>;
   json_metadata: string;
   author_display_name?: string;
   author_avatar_url?: string;
   pending_payout_value: string;
+  total_payout_value: string;
+  curator_payout_value: string;
 }

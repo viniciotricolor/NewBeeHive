@@ -20,7 +20,7 @@ export const processRawPost = async (post: RawHivePost): Promise<Post> => {
 
   return {
     title: post.title,
-    body: post.body, // Manter o corpo completo para ReactMarkdown
+    body: post.body,
     created: post.created,
     permlink: post.permlink,
     author: post.author,
@@ -31,5 +31,7 @@ export const processRawPost = async (post: RawHivePost): Promise<Post> => {
     author_display_name: authorDisplayName,
     author_avatar_url: authorAvatarUrl,
     pending_payout_value: post.pending_payout_value,
+    total_payout_value: post.total_payout_value,
+    curator_payout_value: post.curator_payout_value,
   };
 };

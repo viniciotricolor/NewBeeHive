@@ -10,6 +10,7 @@ import rehypeRaw from 'rehype-raw';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Post } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
+import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
 import { motion } from 'framer-motion';
 
 interface PostGridProps {
@@ -100,10 +101,10 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
                     <MessageSquare className="h-3 w-3 mr-1" /> {post.replies}
                   </div>
                   <div className="flex items-center">
-                    <ThumbsUp className="h-3 w-3 mr-1" /> {post.active_votes.length}
+                    <ThumbsUp className="h-3 w-3 mr-1" /> {getUpvoteCount(post.active_votes)}
                   </div>
                   <div className="flex items-center">
-                    <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                    <span className="font-bold text-green-600">{formatPayout(getTotalPayout(post))}</span>
                   </div>
                 </div>
                 {!userFirstPost && (

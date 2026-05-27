@@ -15,6 +15,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Post, RawHivePost } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
+import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
 
 interface Comment extends Post {
   id: number;
@@ -242,10 +243,10 @@ const PostDetail = () => {
                   <MessageSquare className="h-4 w-4 mr-1" /> {post.replies} Comentários
                 </div>
                 <div className="flex items-center">
-                  <ThumbsUp className="h-4 w-4 mr-1" /> {post.active_votes.length} Curtidas
+                  <ThumbsUp className="h-4 w-4 mr-1" /> {getUpvoteCount(post.active_votes)} Curtidas
                 </div>
                 <div className="flex items-center">
-                  <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                  <span className="font-bold text-green-600">{formatPayout(getTotalPayout(post))}</span>
                 </div>
               </div>
             </CardHeader>
@@ -330,10 +331,10 @@ const PostDetail = () => {
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <div className="flex items-center">
-                              <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
+                              <ThumbsUp className="h-3 w-3 mr-1" /> {getUpvoteCount(comment.active_votes)} Curtidas
                             </div>
                             <div className="flex items-center">
-                              <span className="font-bold text-green-600">${comment.pending_payout_value.replace(' HBD', '')}</span>
+                              <span className="font-bold text-green-600">{formatPayout(getTotalPayout(comment))}</span>
                             </div>
                           </div>
                         </CardContent>
