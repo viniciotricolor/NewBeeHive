@@ -13,9 +13,18 @@ Nossa missão é simplificar a descoberta de novos talentos e histórias na Hive
 
 ## Versão
 
-**Versão:** 1.0.0
+**Versão:** 1.1.0
 
 ## Changelog
+
+### 1.1.0 - maio de 2026
+*   **SEO completo**: meta tags, Open Graph, Twitter Cards, sitemap, robots.txt, `<html lang="pt-BR">`.
+*   **Performance**: code splitting (lazy loading das páginas), imagens com lazy loading.
+*   **Bundle reduzido**: removidos ~40 pacotes não utilizados e 27 componentes UI mortos.
+*   **Tema Claro**: alternância entre tema Hive (escuro) e Claro.
+*   **Error Boundary**: captura de erros inesperados com botão para recarregar.
+*   **Footer**: versão agora via config própria, sem importar package.json.
+*   **Títulos dinâmicos**: cada página tem título e meta tags únicos.
 
 ### 1.0.0 - 19 de setembro de 2025
 *   Lançamento inicial do NewBee Hive 🐝.
