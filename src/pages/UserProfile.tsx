@@ -18,6 +18,7 @@ import rehypeRaw from 'rehype-raw';
 import { Post } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
 import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
+import { useT } from '@/i18n/context';
 import { USER_PROFILE_POSTS_LIMIT } from '@/config/constants';
 
 interface UserProfileData {
@@ -34,6 +35,7 @@ interface UserProfileData {
 }
 
 const UserProfilePage = () => {
+  const t = useT();
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,7 +145,7 @@ const UserProfilePage = () => {
             <Link to="/hive-users">
               <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar para Usuários
+                {t('common.back_to_home')}
               </Button>
             </Link>
             <ProfileHeaderSkeleton />
@@ -161,10 +163,10 @@ const UserProfilePage = () => {
     return (
       <>
         <Helmet>
-          <title>Perfil não encontrado - NewBee Hive 🐝</title>
+          <title>{t('profile.reputation')} não encontrado - NewBee Hive 🐝</title>
         </Helmet>
         <div className="min-h-screen bg-background p-4 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Perfil não encontrado</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4">{t('error.user_not_found')}</h1>
           <p className="text-lg text-muted-foreground mb-6">Não foi possível carregar o perfil para @{username}.</p>
           <Link to="/hive-users">
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -181,12 +183,12 @@ const UserProfilePage = () => {
     <>
       <Helmet>
         <title>{profile.display_name} (@{profile.username}) - NewBee Hive 🐝</title>
-        <meta name="description" content={profile.about ? `Perfil de ${profile.display_name} na Hive Blockchain. ${profile.about.substring(0, 150)}` : `Perfil de ${profile.display_name} (@${profile.username}) na Hive Blockchain.`} />
+        <meta name="description" content={profile.about ? `${t('profile.reputation')} de ${profile.display_name} na Hive Blockchain. ${profile.about.substring(0, 150)}` : `${t('profile.reputation')} de ${profile.display_name} (@${profile.username}) na Hive Blockchain.`} />
         <meta property="og:title" content={`${profile.display_name} (@${profile.username}) - NewBee Hive 🐝`} />
-        <meta property="og:description" content={profile.about?.substring(0, 200) || `Perfil de ${profile.display_name} na Hive Blockchain.`} />
+        <meta property="og:description" content={profile.about?.substring(0, 200) || `${t('profile.reputation')} de ${profile.display_name} na Hive Blockchain.`} />
         <meta property="og:image" content={profile.avatar_url} />
         <meta name="twitter:title" content={`${profile.display_name} (@${profile.username}) - NewBee Hive 🐝`} />
-        <meta name="twitter:description" content={profile.about?.substring(0, 200) || `Perfil de ${profile.display_name} na Hive Blockchain.`} />
+        <meta name="twitter:description" content={profile.about?.substring(0, 200) || `${t('profile.reputation')} de ${profile.display_name} na Hive Blockchain.`} />
         <meta name="twitter:image" content={profile.avatar_url} />
       </Helmet>
 
@@ -196,7 +198,7 @@ const UserProfilePage = () => {
             <Link to="/hive-users">
               <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar para Usuários
+                {t('common.back_to_home')}
               </Button>
             </Link>
             <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-card border-border">
@@ -208,7 +210,7 @@ const UserProfilePage = () => {
                 <CardTitle className="text-3xl font-bold text-foreground">{profile.display_name}</CardTitle>
                 <CardDescription className="text-xl text-primary mb-2">@{profile.username}</CardDescription>
                 <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">
-                  Reputação: {profile.reputation}
+                  {t('profile.reputation')}: {profile.reputation}
                 </Badge>
                 {profile.about && <p className="text-muted-foreground mt-2">{profile.about}</p>}
                 <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 mt-3">
@@ -218,7 +220,7 @@ const UserProfilePage = () => {
                       className="p-0 h-auto text-primary hover:text-primary/90"
                       onClick={() => window.open(profile.website, '_blank')}
                     >
-                      <Globe className="h-4 w-4 mr-1" /> Website
+                      <Globe className="h-4 w-4 mr-1" /> {t('profile.website')}
                     </Button>
                   )}
                   {profile.facebook && (
@@ -264,7 +266,7 @@ const UserProfilePage = () => {
 
           {profile.posts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg text-muted-foreground">Nenhum post encontrado para este usuário.</p>
+              <p className="text-lg text-muted-foreground">{t('profile.no_posts')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

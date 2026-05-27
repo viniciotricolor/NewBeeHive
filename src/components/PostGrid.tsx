@@ -11,6 +11,7 @@ import PostCardSkeleton from '@/components/PostCardSkeleton';
 import { Post } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
 import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
+import { useT } from '@/i18n/context';
 import { motion } from 'framer-motion';
 
 interface PostGridProps {
@@ -22,6 +23,7 @@ interface PostGridProps {
 }
 
 const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, postsPerLoad }: PostGridProps) => {
+  const t = useT();
   const postsToDisplay: Post[] = userFirstPost ? [userFirstPost] : posts;
   const isLoadingContent = loadingUserFirstPost || (loadingHive && posts.length === 0);
 
@@ -120,7 +122,7 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
                     onClick={() => navigate(`/users/${post.author}`)}
                   >
                     <User className="h-4 w-4 mr-2" />
-                    Ver Perfil
+                    {t('post.view_profile')}
                   </Button>
                   <Button 
                     variant="outline"
@@ -128,7 +130,7 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
                     onClick={() => navigate(`/post/${post.author}/${post.permlink}`)}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Ver Post
+                    {t('post.view_post')}
                   </Button>
                 </div>
               </CardContent>

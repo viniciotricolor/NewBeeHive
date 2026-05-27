@@ -1,9 +1,13 @@
-"use client";
+'use client';
 
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useT } from '@/i18n/context';
 
 const Header = () => {
+  const t = useT();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -15,22 +19,23 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Navigation + ThemeToggle */}
-        <div className="flex items-center gap-4">
+        {/* Navigation + Toggles */}
+        <div className="flex items-center gap-1 sm:gap-2">
           <nav className="flex items-center gap-3 text-sm">
             <Link
               to="/"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Home
+              {t('nav.home')}
             </Link>
             <Link
               to="/about"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Sobre
+              {t('nav.about')}
             </Link>
           </nav>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </div>

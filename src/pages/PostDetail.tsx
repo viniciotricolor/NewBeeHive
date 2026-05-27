@@ -16,6 +16,7 @@ import rehypeRaw from 'rehype-raw';
 import { Post, RawHivePost } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
 import { getUpvoteCount, getTotalPayout, formatPayout } from '@/utils/hiveUtils';
+import { useT } from '@/i18n/context';
 
 interface Comment extends Post {
   id: number;
@@ -25,6 +26,7 @@ interface Comment extends Post {
 }
 
 const PostDetail = () => {
+  const t = useT();
   const { author, permlink } = useParams<{ author: string; permlink: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
@@ -199,7 +201,7 @@ const PostDetail = () => {
         <div className="min-h-screen bg-background p-4 text-center text-muted-foreground">
           <h2 className="text-2xl font-bold mb-4 text-foreground">Postagem não encontrada</h2>
           <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
-          <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">Voltar para a Home</Button>
+          <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">{t('common.back_to_home')}</Button>
         </div>
       </>
     );
@@ -220,7 +222,7 @@ const PostDetail = () => {
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
           <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground">
-            Voltar
+            {t('common.back_to_home')}
           </Button>
 
           <Card className="bg-card border-border">
@@ -242,10 +244,10 @@ const PostDetail = () => {
                   <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
                 </div>
                 <div className="flex items-center">
-                  <MessageSquare className="h-4 w-4 mr-1" /> {post.replies} Comentários
+                  <MessageSquare className="h-4 w-4 mr-1" /> {post.replies} {t('post.comments')}
                 </div>
                 <div className="flex items-center">
-                  <ThumbsUp className="h-4 w-4 mr-1" /> {getUpvoteCount(post.active_votes)} Curtidas
+                  <ThumbsUp className="h-4 w-4 mr-1" /> {getUpvoteCount(post.active_votes)} {t('post.likes')}
                 </div>
                 <div className="flex items-center">
                   <span className="font-bold text-green-600">{formatPayout(getTotalPayout(post))}</span>
@@ -285,7 +287,7 @@ const PostDetail = () => {
 
               {/* Seção de Comentários */}
               <div className="mt-8 pt-8 border-t border-border">
-                <h2 className="text-2xl font-bold text-foreground mb-6">Comentários ({comments.length})</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-6">{t('post.comments')} ({comments.length})</h2>
 
                 {loadingComments ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -333,7 +335,7 @@ const PostDetail = () => {
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <div className="flex items-center">
-                              <ThumbsUp className="h-3 w-3 mr-1" /> {getUpvoteCount(comment.active_votes)} Curtidas
+                              <ThumbsUp className="h-3 w-3 mr-1" /> {getUpvoteCount(comment.active_votes)} {t('post.likes')}
                             </div>
                             <div className="flex items-center">
                               <span className="font-bold text-green-600">{formatPayout(getTotalPayout(comment))}</span>

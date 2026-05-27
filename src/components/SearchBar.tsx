@@ -1,47 +1,40 @@
-import { Dispatch, SetStateAction } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, X, RefreshCw } from "lucide-react";
-// Removido o import de useUserFirstPost, pois as props agora vêm de cima.
+'use client';
+
+import { useT } from '@/i18n/context';
 
 interface SearchBarProps {
   usernameSearchTerm: string;
-  setUsernameSearchTerm: Dispatch<SetStateAction<string>>;
+  setUsernameSearchTerm: (value: string) => void;
   handleSearchClick: () => void;
   loadingUserFirstPost: boolean;
 }
 
 const SearchBar = ({ usernameSearchTerm, setUsernameSearchTerm, handleSearchClick, loadingUserFirstPost }: SearchBarProps) => {
+  const t = useT();
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearchClick();
+    }
+  };
+
   return (
-    <div className="relative w-full sm:w-96 flex">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-      <Input
+    <div className="flex gap-2">
+      <input
         type="text"
-        placeholder="Buscar primeiro post por nome de usuário..."
         value={usernameSearchTerm}
         onChange={(e) => setUsernameSearchTerm(e.target.value)}
-        className="pl-10 pr-10 bg-input border-input text-foreground flex-grow"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            handleSearchClick();
-          }
-        }}
-        aria-label="Buscar primeiro post por nome de usuário"
+        onKeyDown={handleKeyDown}
+        placeholder={t('search.placeholder')}
+        className="px-4 py-2 rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
       />
-      {usernameSearchTerm.length > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-          onClick={() => setUsernameSearchTerm('')}
-          aria-label="Limpar busca"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
-      <Button onClick={handleSearchClick} disabled={loadingUserFirstPost} className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-        {loadingUserFirstPost ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-      </Button>
+      <button
+        onClick={handleSearchClick}
+        disabled={loadingUserFirstPost}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
+      >
+        {loadingUserFirstPost ? t('search.searching') : t('search.button_search')}
+      </button>
     </div>
   );
 };

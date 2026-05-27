@@ -13,43 +13,42 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Erro não capturado:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  public render() {
+  handleReload = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
+
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="text-center max-w-md">
-            <h1 className="text-4xl font-bold text-foreground mb-4">Ops! Algo deu errado 🐝</h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              Ocorreu um erro inesperado. Tente recarregar a página.
-            </p>
-            {this.state.error && (
-              <pre className="bg-card border border-border rounded-lg p-4 mb-6 text-sm text-muted-foreground text-left overflow-auto max-h-32">
-                {this.state.error.message}
-              </pre>
-            )}
-            <Button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.href = '/';
-              }}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Recarregar Página
-            </Button>
-          </div>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center bg-background p-8">
+          <span className="text-6xl mb-4">🐝</span>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Ops! Something went wrong 🐝</h2>
+          <p className="text-muted-foreground mb-6 text-center max-w-md">
+            An unexpected error occurred. Please try reloading the page.
+          </p>
+          <details className="mb-4 text-sm text-muted-foreground max-w-lg">
+            <summary className="cursor-pointer hover:text-foreground">Error details</summary>
+            <pre className="mt-2 p-3 bg-muted rounded-md overflow-auto text-xs">
+              {this.state.error?.message}
+            </pre>
+          </details>
+          <Button onClick={this.handleReload} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            Reload Page
+          </Button>
         </div>
       );
     }

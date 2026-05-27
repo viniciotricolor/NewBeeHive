@@ -1,0 +1,82 @@
+{
+  "site": {
+    "name": "NewBee Hive 🐝",
+    "tagline": "Explorador de posts da Hive Blockchain",
+    "tagline_search": "Este é o primeiro post encontrado para o usuário.",
+    "tagline_home": "Descubra as últimas postagens de introdução na comunidade Hive."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "Sobre"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "refresh": "Atualizar",
+    "back_to_home": "Voltar para a Home",
+    "back_to_feed": "Voltar ao feed",
+    "load_more": "Carregar Mais",
+    "loading_more": "Carregando mais posts...",
+    "last_updated": "Última atualização"
+  },
+  "search": {
+    "placeholder": "Buscar usuário da Hive...",
+    "button_search": "Buscar",
+    "searching": "Buscando...",
+    "first_post_of": "Primeiro Post de",
+    "found_between": "Post de introdução encontrado! (Buscado entre {{count}} posts)"
+  },
+  "sort": {
+    "label": "Ordenar por",
+    "recent": "Mais Recentes",
+    "comments": "Mais Comentadas",
+    "votes": "Mais Votadas"
+  },
+  "stats": {
+    "posts_loaded": "Postagens carregadas",
+    "unique_authors": "Autores únicos",
+    "total_votes": "Votos totais",
+    "payout": "Payout estimado"
+  },
+  "post": {
+    "likes": "Curtidas",
+    "comments": "Comentários",
+    "read_more": "Ver mais",
+    "replies_zero": "Sem respostas",
+    "replies_one": "{{count}} resposta",
+    "replies_other": "{{count}} respostas",
+    "view_profile": "Ver Perfil",
+    "view_post": "Ver Post"
+  },
+  "profile": {
+    "reputation": "Reputação",
+    "posts": "Postagens",
+    "website": "Website",
+    "no_posts": "Nenhum post encontrado para este usuário.",
+    "loading_posts": "Carregando posts..."
+  },
+  "error": {
+    "title": "Ops! Algo deu errado 🐝",
+    "description": "Ocorreu um erro inesperado. Tente recarregar a página.",
+    "reload": "Recarregar Página",
+    "no_posts": "Não foi possível carregar os posts. Tente atualizar a página.",
+    "user_not_found": "Usuário não encontrado na Hive.",
+    "post_not_found": "Post não encontrado."
+  },
+  "notfound": {
+    "title": "404 - Página Não Encontrada",
+    "description": "A página que você procura não existe.",
+    "back": "Voltar para a Home"
+  },
+  "about": {
+    "title": "Sobre - NewBee Hive 🐝",
+    "description": "Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain para descobrir novos membros da comunidade."
+  },
+  "footer": {
+    "built_with": "Feito com 💛 por",
+    "on_hive": "na Hive Blockchain"
+  },
+  "language": {
+    "pt": "Português",
+    "en": "English"
+  }
+}

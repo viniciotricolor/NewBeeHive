@@ -1,0 +1,82 @@
+{
+  "site": {
+    "name": "NewBee Hive 🐝",
+    "tagline": "Discover introduction posts on the Hive Blockchain",
+    "tagline_search": "This is the first post found for the user.",
+    "tagline_home": "Discover the latest introduction posts in the Hive community."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About"
+  },
+  "common": {
+    "loading": "Loading...",
+    "refresh": "Refresh",
+    "back_to_home": "Back to Home",
+    "back_to_feed": "Back to feed",
+    "load_more": "Load More",
+    "loading_more": "Loading more posts...",
+    "last_updated": "Last updated"
+  },
+  "search": {
+    "placeholder": "Search Hive username...",
+    "button_search": "Search",
+    "searching": "Searching...",
+    "first_post_of": "First Post of",
+    "found_between": "Introduction post found! (Searched among {{count}} posts)"
+  },
+  "sort": {
+    "label": "Sort by",
+    "recent": "Most Recent",
+    "comments": "Most Commented",
+    "votes": "Most Voted"
+  },
+  "stats": {
+    "posts_loaded": "Posts loaded",
+    "unique_authors": "Unique authors",
+    "total_votes": "Total votes",
+    "payout": "Estimated payout"
+  },
+  "post": {
+    "likes": "likes",
+    "comments": "Comments",
+    "read_more": "Read more",
+    "replies_zero": "No replies",
+    "replies_one": "{{count}} reply",
+    "replies_other": "{{count}} replies",
+    "view_profile": "View Profile",
+    "view_post": "View Post"
+  },
+  "profile": {
+    "reputation": "Reputation",
+    "posts": "Posts",
+    "website": "Website",
+    "no_posts": "No posts found for this user.",
+    "loading_posts": "Loading posts..."
+  },
+  "error": {
+    "title": "Ops! Something went wrong 🐝",
+    "description": "An unexpected error occurred. Please try reloading the page.",
+    "reload": "Reload Page",
+    "no_posts": "Could not load posts. Try refreshing the page.",
+    "user_not_found": "User not found on Hive.",
+    "post_not_found": "Post not found."
+  },
+  "notfound": {
+    "title": "404 - Page Not Found",
+    "description": "The page you are looking for does not exist.",
+    "back": "Back to Home"
+  },
+  "about": {
+    "title": "About - NewBee Hive 🐝",
+    "description": "Learn more about NewBee Hive, a Hive Blockchain post explorer to discover new community members."
+  },
+  "footer": {
+    "built_with": "Built with 💛 by",
+    "on_hive": "on the Hive Blockchain"
+  },
+  "language": {
+    "pt": "Português",
+    "en": "English"
+  }
+}

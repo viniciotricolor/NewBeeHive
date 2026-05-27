@@ -7,24 +7,27 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useLocale } from '@/i18n/context';
 import aboutMarkdown from '@/content/about.md?raw';
+import aboutEnMarkdown from '@/content/about-en.md?raw';
 
 const AboutPage = () => {
+  const { locale, t } = useLocale();
   const [markdown, setMarkdown] = useState('');
 
   useEffect(() => {
-    setMarkdown(aboutMarkdown);
-  }, []);
+    setMarkdown(locale === 'en' ? aboutEnMarkdown : aboutMarkdown);
+  }, [locale]);
 
   return (
     <>
       <Helmet>
-        <title>Sobre - NewBee Hive 🐝</title>
-        <meta name="description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain para descobrir novos membros da comunidade." />
-        <meta property="og:title" content="Sobre - NewBee Hive 🐝" />
-        <meta property="og:description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain." />
-        <meta name="twitter:title" content="Sobre - NewBee Hive 🐝" />
-        <meta name="twitter:description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain." />
+        <title>{t('about.title')}</title>
+        <meta name="description" content={t('about.description')} />
+        <meta property="og:title" content={t('about.title')} />
+        <meta property="og:description" content={t('about.description')} />
+        <meta name="twitter:title" content={t('about.title')} />
+        <meta name="twitter:description" content={t('about.description')} />
       </Helmet>
 
       <div className="min-h-screen bg-background p-4">
@@ -32,7 +35,7 @@ const AboutPage = () => {
           <Link to="/">
             <Button variant="outline" className="mb-6 bg-card text-card-foreground border-border">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para a Home
+              {t('common.back_to_home')}
             </Button>
           </Link>
           <div className="prose dark:prose-invert max-w-none text-foreground bg-card p-6 rounded-lg shadow-md">

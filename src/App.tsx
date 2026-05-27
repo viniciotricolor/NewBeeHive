@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { HelmetProvider } from 'react-helmet-async';
+import { LocaleProvider } from '@/i18n/context';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -32,6 +33,7 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="hive">
+        <LocaleProvider>
         <TooltipProvider>
           <Sonner />
           <BrowserRouter>
@@ -57,6 +59,7 @@ const App = () => (
             </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
+        </LocaleProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </HelmetProvider>
