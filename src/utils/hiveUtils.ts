@@ -21,7 +21,8 @@ export const getTotalPayout = (post: {
   total_payout_value: string;
   curator_payout_value: string;
 }): number => {
-  const parseHbd = (val: string): number => {
+  const parseHbd = (val: string | undefined): number => {
+    if (!val) return 0;
     const num = parseFloat(val.replace(' HBD', '').replace(' HIVE', ''));
     return isNaN(num) ? 0 : num;
   };
