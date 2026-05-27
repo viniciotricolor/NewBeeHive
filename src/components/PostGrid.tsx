@@ -63,7 +63,7 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
               <CardHeader className="pb-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
+                    <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} loading="lazy" />
                     <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
@@ -80,7 +80,8 @@ const PostGrid = ({ posts, loadingHive, userFirstPost, loadingUserFirstPost, pos
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
-                      a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
+                      a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />,
+                      img: ({ node, ...props }) => <img loading="lazy" {...props} />,
                     }}
                   >
                     {truncatedBody}

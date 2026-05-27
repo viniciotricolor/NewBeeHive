@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
@@ -16,21 +17,32 @@ const AboutPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <Link to="/">
-          <Button variant="outline" className="mb-6 bg-card text-card-foreground border-border">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para a Home
-          </Button>
-        </Link>
-        <div className="prose dark:prose-invert max-w-none text-foreground bg-card p-6 rounded-lg shadow-md">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {markdown}
-          </ReactMarkdown>
+    <>
+      <Helmet>
+        <title>Sobre - NewBee Hive 🐝</title>
+        <meta name="description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain para descobrir novos membros da comunidade." />
+        <meta property="og:title" content="Sobre - NewBee Hive 🐝" />
+        <meta property="og:description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain." />
+        <meta name="twitter:title" content="Sobre - NewBee Hive 🐝" />
+        <meta name="twitter:description" content="Saiba mais sobre o NewBee Hive, um explorador de posts da Hive Blockchain." />
+      </Helmet>
+
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-4xl mx-auto">
+          <Link to="/">
+            <Button variant="outline" className="mb-6 bg-card text-card-foreground border-border">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para a Home
+            </Button>
+          </Link>
+          <div className="prose dark:prose-invert max-w-none text-foreground bg-card p-6 rounded-lg shadow-md">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {markdown}
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

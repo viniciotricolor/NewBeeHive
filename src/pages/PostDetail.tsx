@@ -2,20 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from "lucide-react";
-import { showSuccess, showError } from "@/utils/toast";
+import { Helmet } from 'react-helmet-async';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Calendar, MessageSquare, ThumbsUp, ExternalLink, User, RefreshCw } from 'lucide-react';
+import { showSuccess, showError } from '@/utils/toast';
 import { getContent, getAccounts, getPostComments, formatReputation } from '@/services/hive';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Post, RawHivePost } from '@/types/hive'; // Importar RawHivePost
+import { Post, RawHivePost } from '@/types/hive';
 import { formatDate } from '@/utils/dateUtils';
 
-interface Comment extends Post { // Estende Post para reusar campos comuns
+interface Comment extends Post {
   id: number;
   depth: number;
   author_reputation?: number;
@@ -62,17 +63,15 @@ const PostDetail = () => {
       author_display_name: authorDisplayName,
       author_avatar_url: authorAvatarUrl,
       pending_payout_value: comment.pending_payout_value,
-      depth: comment.depth || 0, // Ensure depth is always a number
-      author_reputation: reputationInfo?.formatted,
-      raw_author_reputation: reputationInfo?.raw,
-      title: comment.title, // Adicionado para satisfazer a interface Post
-      url: `https://hive.blog/@${comment.author}/${comment.permlink}`, // Adicionado para satisfazer a interface Post
+      depth: comment.depth || 0,
+      title: comment.title,
+      url: `https://hive.blog/@${comment.author}/${comment.permlink}`,
     };
   };
 
   const fetchPostDetail = useCallback(async () => {
     if (!author || !permlink) {
-      showError("Autor ou permlink da postagem não fornecidos.");
+      showError('Autor ou permlink da postagem não fornecidos.');
       setLoadingPost(false);
       return;
     }
@@ -82,7 +81,7 @@ const PostDetail = () => {
       const rawPost: RawHivePost = await getContent({ author, permlink });
 
       if (!rawPost || rawPost.id === 0) {
-        showError("Postagem não encontrada.");
+        showError('Postagem não encontrada.');
         setPost(null);
         setLoadingPost(false);
         return;
@@ -121,9 +120,9 @@ const PostDetail = () => {
       };
 
       setPost(processedPost);
-      showSuccess("Detalhes da postagem carregados com sucesso!");
+      showSuccess('Detalhes da postagem carregados com sucesso!');
     } catch (error: any) {
-      console.error("Erro ao buscar detalhes da postagem:", error);
+      console.error('Erro ao buscar detalhes da postagem:', error);
       showError(`Falha ao carregar detalhes da postagem: ${error.message}.`);
       setPost(null);
     } finally {
@@ -162,7 +161,7 @@ const PostDetail = () => {
 
       setComments(filteredComments);
     } catch (error: any) {
-      console.error("Erro ao buscar comentários:", error);
+      console.error('Erro ao buscar comentários:', error);
       showError(`Falha ao carregar comentários: ${error.message}.`);
       setComments([]);
     } finally {
@@ -177,153 +176,177 @@ const PostDetail = () => {
 
   if (loadingPost) {
     return (
-      <div className="min-h-screen bg-background p-4 flex justify-center items-center">
-        <PostCardSkeleton />
-      </div>
+      <>
+        <Helmet>
+          <title>Carregando post... - NewBee Hive 🐝</title>
+        </Helmet>
+        <div className="min-h-screen bg-background p-4 flex justify-center items-center">
+          <PostCardSkeleton />
+        </div>
+      </>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background p-4 text-center text-muted-foreground">
-        <h2 className="text-2xl font-bold mb-4 text-foreground">Postagem não encontrada</h2>
-        <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
-        <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">Voltar para a Home</Button>
-      </div>
+      <>
+        <Helmet>
+          <title>Postagem não encontrada - NewBee Hive 🐝</title>
+        </Helmet>
+        <div className="min-h-screen bg-background p-4 text-center text-muted-foreground">
+          <h2 className="text-2xl font-bold mb-4 text-foreground">Postagem não encontrada</h2>
+          <p className="text-lg mb-6">Parece que esta postagem não existe ou foi removida.</p>
+          <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-primary-foreground">Voltar para a Home</Button>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground">
-          Voltar
-        </Button>
+    <>
+      <Helmet>
+        <title>{post.title} - NewBee Hive 🐝</title>
+        <meta name="description" content={post.body ? `Post de @${post.author} na Hive Blockchain: ${post.body.substring(0, 160).replace(/[#*`]/g, '')}...` : `Post de @${post.author} na Hive Blockchain.`} />
+        <meta property="og:title" content={`${post.title} - NewBee Hive 🐝`} />
+        <meta property="og:description" content={`Por @${post.author} na Hive Blockchain. ${post.body?.substring(0, 200).replace(/[#*`]/g, '')}...`} />
+        <meta property="og:image" content={post.author_avatar_url} />
+        <meta name="twitter:title" content={`${post.title} - NewBee Hive 🐝`} />
+        <meta name="twitter:description" content={`Por @${post.author} na Hive Blockchain.`} />
+      </Helmet>
 
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-4">
-            <div className="flex items-center space-x-4 mb-4">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} />
-                <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <CardTitle className="text-2xl text-card-foreground">{post.title}</CardTitle>
-                <CardDescription className="text-md text-primary">
-                  Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
-                </CardDescription>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
-              </div>
-              <div className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-1" /> {post.replies} Comentários
-              </div>
-              <div className="flex items-center">
-                <ThumbsUp className="h-4 w-4 mr-1" /> {post.active_votes.length} Curtidas
-              </div>
-              <div className="flex items-center">
-                <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
-                }}
-              >
-                {post.body}
-              </ReactMarkdown>
-            </div>
-            <div className="mt-6 flex gap-2">
-              <Button 
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
-                onClick={() => navigate(`/users/${post.author}`)}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Ver Perfil
-              </Button>
-              <Button 
-                variant="outline"
-                className="flex-1 bg-card text-card-foreground border-border" 
-                onClick={() => window.open(post.url, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Ver na Hive.blog
-              </Button>
-            </div>
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-4xl mx-auto">
+          <Button onClick={() => navigate(-1)} className="mb-6 bg-primary hover:bg-primary/90 text-primary-foreground">
+            Voltar
+          </Button>
 
-            {/* Seção de Comentários */}
-            <div className="mt-8 pt-8 border-t border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-6">Comentários ({comments.length})</h2>
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-4">
+              <div className="flex items-center space-x-4 mb-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={post.author_avatar_url} alt={post.author_display_name} loading="lazy" />
+                  <AvatarFallback>{post.author_display_name?.charAt(0) || post.author.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <CardTitle className="text-2xl text-card-foreground">{post.title}</CardTitle>
+                  <CardDescription className="text-md text-primary">
+                    Por <Link to={`/users/${post.author}`} className="font-medium hover:underline">@{post.author}</Link>
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
+                </div>
+                <div className="flex items-center">
+                  <MessageSquare className="h-4 w-4 mr-1" /> {post.replies} Comentários
+                </div>
+                <div className="flex items-center">
+                  <ThumbsUp className="h-4 w-4 mr-1" /> {post.active_votes.length} Curtidas
+                </div>
+                <div className="flex items-center">
+                  <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="prose dark:prose-invert max-w-none text-card-foreground mt-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />,
+                    img: ({ node, ...props }) => <img loading="lazy" {...props} />,
+                  }}
+                >
+                  {post.body}
+                </ReactMarkdown>
+              </div>
+              <div className="mt-6 flex gap-2">
+                <Button 
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
+                  onClick={() => navigate(`/users/${post.author}`)}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Ver Perfil
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1 bg-card text-card-foreground border-border" 
+                  onClick={() => window.open(post.url, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Ver na Hive.blog
+                </Button>
+              </div>
 
-              {loadingComments ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                  <p>Carregando comentários...</p>
-                </div>
-              ) : comments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {comments.map((comment) => (
-                    <Card key={comment.id} className="bg-card border-border shadow-sm">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={comment.author_avatar_url} alt={comment.author_display_name} />
-                            <AvatarFallback>{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <CardTitle className="text-md text-card-foreground">{comment.author_display_name || comment.author}</CardTitle>
-                            <CardDescription className="text-xs text-muted-foreground">
-                              <Link to={`/users/${comment.author}`} className="font-medium hover:underline text-primary">@{comment.author}</Link> • {formatDate(comment.created)}
-                              {comment.author_reputation !== undefined && (
-                                <span className="ml-2 text-muted-foreground">({comment.author_reputation})</span>
-                              )}
-                            </CardDescription>
+              {/* Seção de Comentários */}
+              <div className="mt-8 pt-8 border-t border-border">
+                <h2 className="text-2xl font-bold text-foreground mb-6">Comentários ({comments.length})</h2>
+
+                {loadingComments ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p>Carregando comentários...</p>
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {comments.map((comment) => (
+                      <Card key={comment.id} className="bg-card border-border shadow-sm">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={comment.author_avatar_url} alt={comment.author_display_name} loading="lazy" />
+                              <AvatarFallback>{comment.author_display_name?.charAt(0) || comment.author.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <CardTitle className="text-md text-card-foreground">{comment.author_display_name || comment.author}</CardTitle>
+                              <CardDescription className="text-xs text-muted-foreground">
+                                <Link to={`/users/${comment.author}`} className="font-medium hover:underline text-primary">@{comment.author}</Link> • {formatDate(comment.created)}
+                                {comment.author_reputation !== undefined && (
+                                  <span className="ml-2 text-muted-foreground">({comment.author_reputation})</span>
+                                )}
+                              </CardDescription>
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw]}
-                            components={{
-                              a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
-                            }}
-                          >
-                            {comment.body}
-                          </ReactMarkdown>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <div className="flex items-center">
-                            <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
+                        </CardHeader>
+                        <CardContent>
+                          <div className="prose dark:prose-invert max-w-none text-card-foreground text-sm mb-3">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeRaw]}
+                              components={{
+                                a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />,
+                                img: ({ node, ...props }) => <img loading="lazy" {...props} />,
+                              }}
+                            >
+                              {comment.body}
+                            </ReactMarkdown>
                           </div>
-                          <div className="flex items-center">
-                            <span className="font-bold text-green-600">${comment.pending_payout_value.replace(' HBD', '')}</span>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center">
+                              <ThumbsUp className="h-3 w-3 mr-1" /> {comment.active_votes.length} Curtidas
+                            </div>
+                            <div className="flex items-center">
+                              <span className="font-bold text-green-600">${comment.pending_payout_value.replace(' HBD', '')}</span>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

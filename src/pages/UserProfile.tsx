@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, ExternalLink, Calendar, MessageSquare, ThumbsUp, Globe, Link as LinkIcon } from "lucide-react";
-import { showSuccess, showError } from "@/utils/toast";
+import { Helmet } from 'react-helmet-async';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, ExternalLink, Calendar, MessageSquare, ThumbsUp, Globe, Link as LinkIcon } from 'lucide-react';
+import { showSuccess, showError } from '@/utils/toast';
 import { getAccounts, getDiscussionsByBlog, formatReputation } from '@/services/hive';
 import ProfileHeaderSkeleton from '@/components/ProfileHeaderSkeleton';
 import PostCardSkeleton from '@/components/PostCardSkeleton';
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -39,7 +40,7 @@ const UserProfilePage = () => {
   const fetchUserProfileAndPosts = useCallback(async () => {
     const cleanUsername = username?.trim();
     if (!cleanUsername || cleanUsername.length === 0) {
-      showError("Nome de usuário inválido. Por favor, forneça um nome de usuário válido.");
+      showError('Nome de usuário inválido. Por favor, forneça um nome de usuário válido.');
       setProfile(null);
       setLoading(false);
       return;
@@ -51,7 +52,7 @@ const UserProfilePage = () => {
 
       let displayName = cleanUsername;
       let avatarUrl = `https://images.hive.blog/u/${cleanUsername}/avatar`;
-      let about = "";
+      let about = '';
       let reputation = 25;
       let website: string | undefined;
       let facebook: string | undefined;
@@ -73,7 +74,7 @@ const UserProfilePage = () => {
             if (metadata.profile.instagram) instagram = metadata.profile.instagram;
           }
         } catch (e) {
-          console.warn("Could not parse user metadata:", e);
+          console.warn('Could not parse user metadata:', e);
         }
       } else {
         showError(`Usuário @${cleanUsername} não encontrado na Hive.`);
@@ -130,172 +131,195 @@ const UserProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-4xl mx-auto">
-          <Link to="/hive-users">
-            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para Usuários
-            </Button>
-          </Link>
-          <ProfileHeaderSkeleton />
-          <h2 className="text-3xl font-bold text-foreground mb-6 mt-8 text-center sm:text-left">Posts de @{username}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => <PostCardSkeleton key={i} />)}
+      <>
+        <Helmet>
+          <title>@{username} - NewBee Hive 🐝</title>
+        </Helmet>
+        <div className="min-h-screen bg-background p-4">
+          <div className="max-w-4xl mx-auto">
+            <Link to="/hive-users">
+              <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Usuários
+              </Button>
+            </Link>
+            <ProfileHeaderSkeleton />
+            <h2 className="text-3xl font-bold text-foreground mb-6 mt-8 text-center sm:text-left">Posts de @{username}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => <PostCardSkeleton key={i} />)}
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background p-4 text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-4">Perfil não encontrado</h1>
-        <p className="text-lg text-muted-foreground mb-6">Não foi possível carregar o perfil para @{username}.</p>
-        <Link to="/hive-users">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para Usuários
-          </Button>
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+      <>
+        <Helmet>
+          <title>Perfil não encontrado - NewBee Hive 🐝</title>
+        </Helmet>
+        <div className="min-h-screen bg-background p-4 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-4">Perfil não encontrado</h1>
+          <p className="text-lg text-muted-foreground mb-6">Não foi possível carregar o perfil para @{username}.</p>
           <Link to="/hive-users">
-            <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar para Usuários
             </Button>
           </Link>
-          <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-card border-border">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-              <AvatarFallback className="text-4xl">{profile.display_name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left flex-1">
-              <CardTitle className="text-3xl font-bold text-foreground">{profile.display_name}</CardTitle>
-              <CardDescription className="text-xl text-primary mb-2">@{profile.username}</CardDescription>
-              <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">
-                Reputação: {profile.reputation}
-              </Badge>
-              {profile.about && <p className="text-muted-foreground mt-2">{profile.about}</p>}
-              <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 mt-3">
-                {profile.website && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary hover:text-primary/90"
-                    onClick={() => window.open(profile.website, '_blank')}
-                  >
-                    <Globe className="h-4 w-4 mr-1" /> Website
-                  </Button>
-                )}
-                {profile.facebook && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary hover:text-primary/90"
-                    onClick={() => window.open(`https://facebook.com/${profile.facebook}`, '_blank')}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-1" /> Facebook
-                  </Button>
-                )}
-                {profile.twitter && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary hover:text-primary/90"
-                    onClick={() => window.open(`https://twitter.com/${profile.twitter}`, '_blank')}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-1" /> Twitter
-                  </Button>
-                )}
-                {profile.instagram && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-primary hover:text-primary/90"
-                    onClick={() => window.open(`https://instagram.com/${profile.instagram}`, '_blank')}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-1" /> Instagram
-                  </Button>
-                )}
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-primary hover:text-primary/90"
-                  onClick={() => window.open(`https://hive.blog/@${profile.username}`, '_blank')}
-                >
-                  Ver perfil na Hive <ExternalLink className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          </Card>
         </div>
+      </>
+    );
+  }
 
-        <h2 className="text-3xl font-bold text-foreground mb-6 text-center sm:text-left">Posts de @{profile.username}</h2>
+  return (
+    <>
+      <Helmet>
+        <title>{profile.display_name} (@{profile.username}) - NewBee Hive 🐝</title>
+        <meta name="description" content={profile.about ? `Perfil de ${profile.display_name} na Hive Blockchain. ${profile.about.substring(0, 150)}` : `Perfil de ${profile.display_name} (@${profile.username}) na Hive Blockchain.`} />
+        <meta property="og:title" content={`${profile.display_name} (@${profile.username}) - NewBee Hive 🐝`} />
+        <meta property="og:description" content={profile.about?.substring(0, 200) || `Perfil de ${profile.display_name} na Hive Blockchain.`} />
+        <meta property="og:image" content={profile.avatar_url} />
+        <meta name="twitter:title" content={`${profile.display_name} (@${profile.username}) - NewBee Hive 🐝`} />
+        <meta name="twitter:description" content={profile.about?.substring(0, 200) || `Perfil de ${profile.display_name} na Hive Blockchain.`} />
+        <meta name="twitter:image" content={profile.avatar_url} />
+      </Helmet>
 
-        {profile.posts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg text-muted-foreground">Nenhum post encontrado para este usuário.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {profile.posts.map((post) => (
-              <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.author_avatar_url} alt={post.author} />
-                      <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <CardTitle className="text-xl text-card-foreground">{post.title}</CardTitle>
-                      <CardDescription className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose dark:prose-invert max-w-none text-card-foreground mb-4">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                      components={{
-                        a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />
-                      }}
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Link to="/hive-users">
+              <Button variant="outline" className="mb-4 bg-card text-card-foreground border-border">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Usuários
+              </Button>
+            </Link>
+            <Card className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-card border-border">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={profile.avatar_url} alt={profile.display_name} loading="lazy" />
+                <AvatarFallback className="text-4xl">{profile.display_name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="text-center sm:text-left flex-1">
+                <CardTitle className="text-3xl font-bold text-foreground">{profile.display_name}</CardTitle>
+                <CardDescription className="text-xl text-primary mb-2">@{profile.username}</CardDescription>
+                <Badge variant="secondary" className="mb-2 bg-secondary text-secondary-foreground">
+                  Reputação: {profile.reputation}
+                </Badge>
+                {profile.about && <p className="text-muted-foreground mt-2">{profile.about}</p>}
+                <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 mt-3">
+                  {profile.website && (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary hover:text-primary/90"
+                      onClick={() => window.open(profile.website, '_blank')}
                     >
-                      {post.body}
-                    </ReactMarkdown>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}
-                    </div>
-                    <div className="flex items-center">
-                      <ThumbsUp className="h-4 w-4 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
-                    </div>
-                    {/* Adicionado o valor de pagamento pendente aqui */}
-                    <div className="flex items-center">
-                      <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
-                    </div>
-                  </div>
+                      <Globe className="h-4 w-4 mr-1" /> Website
+                    </Button>
+                  )}
+                  {profile.facebook && (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary hover:text-primary/90"
+                      onClick={() => window.open(`https://facebook.com/${profile.facebook}`, '_blank')}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-1" /> Facebook
+                    </Button>
+                  )}
+                  {profile.twitter && (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary hover:text-primary/90"
+                      onClick={() => window.open(`https://twitter.com/${profile.twitter}`, '_blank')}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-1" /> Twitter
+                    </Button>
+                  )}
+                  {profile.instagram && (
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-primary hover:text-primary/90"
+                      onClick={() => window.open(`https://instagram.com/${profile.instagram}`, '_blank')}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-1" /> Instagram
+                    </Button>
+                  )}
                   <Button 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                    onClick={() => window.open(post.url, '_blank')}
+                    variant="link" 
+                    className="p-0 h-auto text-primary hover:text-primary/90"
+                    onClick={() => window.open(`https://hive.blog/@${profile.username}`, '_blank')}
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Ler Post Completo
+                    Ver perfil na Hive <ExternalLink className="h-4 w-4 ml-1" />
                   </Button>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              </div>
+            </Card>
           </div>
-        )}
+
+          <h2 className="text-3xl font-bold text-foreground mb-6 text-center sm:text-left">Posts de @{profile.username}</h2>
+
+          {profile.posts.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-lg text-muted-foreground">Nenhum post encontrado para este usuário.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {profile.posts.map((post) => (
+                <Card key={post.permlink} className="hover:shadow-lg transition-shadow duration-300 bg-card border-border">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={post.author_avatar_url} alt={post.author} loading="lazy" />
+                        <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl text-card-foreground">{post.title}</CardTitle>
+                        <CardDescription className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.created)}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose dark:prose-invert max-w-none text-card-foreground mb-4">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={{
+                          a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" {...props} />,
+                          img: ({ node, ...props }) => <img loading="lazy" {...props} />,
+                        }}
+                      >
+                        {post.body}
+                      </ReactMarkdown>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center">
+                        <MessageSquare className="h-4 w-4 mr-1" /> {post.replies}
+                      </div>
+                      <div className="flex items-center">
+                        <ThumbsUp className="h-4 w-4 mr-1" /> {getVoteWeight(post.active_votes).toFixed(2)}
+                      </div>
+                      <div className="flex items-center">
+                        <span className="font-bold text-green-600">${post.pending_payout_value.replace(' HBD', '')}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                      onClick={() => window.open(post.url, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ler Post Completo
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

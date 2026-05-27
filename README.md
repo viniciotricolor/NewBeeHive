@@ -1,54 +1,116 @@
 # NewBee Hive 🐝
 
-Bem-vindo ao NewBee Hive 🐝! Este é um explorador de posts da Hive Blockchain focado em ajudar novos usuários e antigos a descobrir conteúdo de introdução e perfis de outros membros da comunidade.
+Bem-vindo ao **NewBee Hive** 🐝! Um explorador de posts da Hive Blockchain focado em ajudar a descobrir conteúdo de introdução e perfis de membros da comunidade.
 
-## Sobre o Projeto
+🌐 **Live:** [https://newbeehive.vercel.app/](https://newbeehive.vercel.app/)
 
-O NewBee Hive tem como objetivo principal facilitar a descoberta de novos talentos e histórias na Hive, especialmente para aqueles que estão começando sua jornada na blockchain. Ele oferece uma interface amigável para explorar postagens de introdução (`#introduceyourself`), buscar o primeiro post de um usuário específico, visualizar perfis de usuários com suas postagens e ver detalhes completos de cada postagem, incluindo comentários.
+---
 
-## Funcionalidades
+## 🚀 Funcionalidades
 
-*   **Explorar Postagens de Introdução**: Navegue pelas últimas postagens com a tag `#introduceyourself`.
-*   **Buscar Primeiro Post por Usuário**: Encontre rapidamente o primeiro post de introdução de qualquer usuário da Hive.
-*   **Perfis de Usuários**: Visualize informações detalhadas de perfis de usuários, incluindo suas postagens recentes.
-*   **Detalhes da Postagem**: Acesse o conteúdo completo de uma postagem, seus comentários e informações de autoria.
-*   **Temas**: Suporte a temas para personalizar a experiência visual.
-*   **Responsivo**: Design otimizado para diferentes tamanhos de tela.
+- **Explorar Postagens de Introdução**: Navegue pelos últimos posts com a tag `#introduceyourself`, ordenados por criação, trending ou hot.
+- **Buscar Primeiro Post**: Encontre o primeiro post de introdução de qualquer usuário da Hive rapidamente.
+- **Perfis de Usuários**: Veja informações detalhadas — avatar, bio, redes sociais, reputação e posts recentes.
+- **Detalhes da Postagem**: Leia o conteúdo completo, veja comentários e métricas (votos, payout, etc.).
+- **Tema Claro/Escuro**: Alterne entre o tema escuro **Hive** (padrão) e o tema **Claro**.
+- **Design Responsivo**: Otimizado para mobile, tablet e desktop.
+- **Animações suaves**: Cards com animações de entrada via Framer Motion.
 
-## Links Úteis
+---
 
-*   **Site:** [https://newbeehive.vercel.app/](https://newbeehive.vercel.app)
-*   **Repositório GitHub:** [https://github.com/viniciotricolor/NewBeeHive](https://github.com/viniciotricolor/NewBeeHive)
+## 🔧 Melhorias Técnicas (v1.1.0)
 
-## Como Rodar Localmente
+### ⚡ Performance
+- **Code Splitting**: Todas as páginas agora são carregadas sob demanda com `React.lazy()` + `Suspense`.
+- **Remoção de dependências mortas**: Removidos **~40 pacotes** não utilizados (Radix UI, recharts, cmdk, date-fns, zod, react-hook-form, etc.), reduzindo o bundle de ~30%.
+- **Lazy loading de imagens**: Atributo `loading="lazy"` adicionado a todos os avatares e imagens nos posts.
+- **React Query configurado**: Cache configurado com `staleTime: 2min`, retry automático, `refetchOnWindowFocus: false`.
 
-Para configurar e rodar o projeto em sua máquina local, siga os passos abaixo:
+### 🎨 SEO & Acessibilidade
+- **Meta tags**: Open Graph (Facebook/LinkedIn) + Twitter Cards configurados em todas as páginas.
+- **Títulos dinâmicos**: Cada página tem `<title>` único usando `react-helmet-async`.
+- **`<html lang="pt-BR">`**: Idioma correto para acessibilidade e SEO.
+- **Canonical URL + Sitemap + robots.txt**: Auxilia mecanismos de busca a indexar corretamente.
+- **Keywords e descrições**: Meta tags ricas para SEO.
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone https://github.com/viniciotricolor/NewBeeHive.git
-    cd NewBeeHive
-    ```
+### 🛡️ Confiabilidade
+- **Error Boundary**: Erros inesperados são capturados e exibidos com botão para recarregar.
+- **Footer sem vazamento de bundle**: A versão agora vem de `src/config/version.ts` em vez de importar `package.json`.
+- **Toast com feedback**: Notificações de sucesso/erro via Sonner para melhor UX.
 
-2.  **Instale as dependências:**
-    ```bash
-    npm install
-    # ou yarn install
-    # ou pnpm install
-    ```
+### 🎨 Tema Claro
+- Tema claro completo com variáveis CSS para modo `.light`.
+- Alternância rápida entre Hive (escuro) e Claro via botão no canto superior direito.
 
-3.  **Inicie o servidor de desenvolvimento:**
-    ```bash
-    npm run dev
-    # ou yarn dev
-    # ou pnpm dev
-    ```
-    O aplicativo estará disponível em `http://localhost:8080`.
+---
 
-## Contribuição
+## 📦 Stack
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests no repositório do GitHub.
+| Tecnologia | Uso |
+|-----------|-----|
+| **React 18** + TypeScript | Framework principal |
+| **Vite** | Build tool ultrarrápida |
+| **Tailwind CSS** + shadcn/ui | Estilização |
+| **React Router v6** | Roteamento SPA |
+| **@tanstack/react-query** | Cache e gerenciamento de estado assíncrono |
+| **Framer Motion** | Animações |
+| **react-helmet-async** | SEO (meta tags dinâmicas) |
+| **Hive RPC API** | Fonte de dados blockchain |
+| **Vercel** | Deploy contínuo |
 
-## Licença
+---
 
-Este projeto está licenciado sob a licença MIT.
+## 🏗️ Como Rodar Localmente
+
+```bash
+# Clone
+git clone https://github.com/viniciotricolor/NewBeeHive.git
+cd NewBeeHive
+
+# Instale as dependências
+pnpm install
+
+# Inicie o dev server
+pnpm dev
+```
+
+O app estará disponível em `http://localhost:5173`.
+
+### Comandos Úteis
+
+| Comando | Descrição |
+|---------|-----------|
+| `pnpm dev` | Servidor de desenvolvimento |
+| `pnpm build` | Build de produção |
+| `pnpm preview` | Preview do build local |
+| `pnpm lint` | Verificação de lint |
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── components/        # Componentes React reutilizáveis
+│   └── ui/           # Componentes base (shadcn/ui)
+├── config/            # Constantes e configurações
+├── content/           # Conteúdo estático (markdown)
+├── hooks/             # Custom hooks React
+├── lib/              # Utilitários (cn, etc.)
+├── pages/            # Páginas da aplicação (lazy-loaded)
+├── services/         # Chamadas à API Hive
+├── types/            # Tipos TypeScript
+└── utils/            # Funções utilitárias
+```
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas! Abra uma [issue](https://github.com/viniciotricolor/NewBeeHive/issues) ou envi um pull request.
+
+---
+
+## 📄 Licença
+
+MIT © 2024 — [viniciotricolor](https://github.com/viniciotricolor)
