@@ -34,17 +34,33 @@ To make it easy to find and connect with new members of the Hive community. Thro
 |---|---|
 | 🌐 **Live Site** | [newbeehive.vercel.app](https://newbeehive.vercel.app) |
 | 📦 **Repository** | [github.com/viniciotricolor/NewBeeHive](https://github.com/viniciotricolor/NewBeeHive) |
-| 🐝 **Hive Blog** | [@viniciotricolor](https://hive.blog/@viniciotricolor) |
+| 🐝 **Hive Blog** | [peakd.com/@viniciotricolor](https://peakd.com/@viniciotricolor) |
 
 ---
 
 ## 🏷️ Version
 
-> 🚀 **NewBee Hive v1.1.0**
+> 🚀 **NewBee Hive v1.2.0**
 
 ---
 
 ## 📋 Changelog
+
+### v1.2.0 — May 2026
+
+#### 🌍 Internationalization
+
+- **🇧🇷🇺🇸 Full bilingual support** — Portuguese (PT-BR) and English (EN)
+- **🔤 Language toggle** — button in the header to switch between languages
+- **💾 Persistence** — language preference saved to localStorage
+- **🌐 Automatic detection** — detects browser language on first visit
+- **📄 About page in English** — fully translated version
+
+#### 🔗 Other improvements
+
+- **🔗 Footer link** — now points to [peakd.com/@viniciotricolor](https://peakd.com/@viniciotricolor)
+
+---
 
 ### v1.1.0 — May 2026
 
@@ -78,4 +94,4 @@ To make it easy to find and connect with new members of the Hive community. Thro
 
 ---
 
-> Built with 💛 by [@viniciotricolor](https://github.com/viniciotricolor) on the Hive Blockchain 🐝
+> Built with 💛 by [@viniciotricolor](https://peakd.com/@viniciotricolor) on the Hive Blockchain 🐝

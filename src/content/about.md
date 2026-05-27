@@ -37,19 +37,35 @@ Simplificar a descoberta de novos talentos e histórias na Hive, especialmente p
 |---|---|
 | 🌍 **Site** | [newbeehive.vercel.app](https://newbeehive.vercel.app) |
 | 💻 **GitHub** | [github.com/viniciotricolor/NewBeeHive](https://github.com/viniciotricolor/NewBeeHive) |
-| 🐝 **Hive Blog** | [hive.blog](https://hive.blog) |
+| 🐝 **Hive Blog** | [peakd.com/@viniciotricolor](https://peakd.com/@viniciotricolor) |
 
 ---
 
 ## 🏷️ Versão Atual
 
 ```
-🚀 NewBee Hive  v1.1.0  —  maio de 2026
+| 🚀 NewBee Hive  v1.2.0  —  maio de 2026
 ```
 
 ---
 
 ## 📋 Changelog
+
+### `v1.2.0` — maio de 2026
+
+> 🌍 **Internacionalização**
+
+- **🇧🇷🇺🇸 Site bilíngue** — suporte completo PT-BR e EN
+- **🔤 Toggle de idioma** — botão no header para alternar entre português e inglês
+- **💾 Persistência** — idioma salvo no localStorage
+- **🌐 Detecção automática** — detecta idioma do navegador na primeira visita
+- **📄 Página Sobre em inglês** — versão completa traduzida
+
+> 🔗 **Outras melhorias**
+
+- **🔗 Link do rodapé** — agora aponta para [peakd.com/@viniciotricolor](https://peakd.com/@viniciotricolor)
+
+---
 
 ### `v1.1.0` — maio de 2026
 
@@ -91,4 +107,4 @@ Simplificar a descoberta de novos talentos e histórias na Hive, especialmente p
 
 ---
 
-> ⌨️ Feito com 💛 por [@viniciotricolor](https://hive.blog/@viniciotricolor) na Hive Blockchain
+> ⌨️ Feito com 💛 por [@viniciotricolor](https://peakd.com/@viniciotricolor) na Hive Blockchain
