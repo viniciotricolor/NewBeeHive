@@ -91,12 +91,18 @@ export const useUserFirstPost = () => {
     }
   }, [usernameSearchTerm, fetchUserFirstPost]);
 
+  const clearUserFirstPost = useCallback(() => {
+    setUserFirstPost(null);
+    setUsernameSearchTerm('');
+  }, []);
+
   return {
     userFirstPost,
     loadingUserFirstPost,
     usernameSearchTerm,
     setUsernameSearchTerm,
     handleSearchClick,
-    handleRefresh
+    handleRefresh,
+    clearUserFirstPost,
   };
 };
